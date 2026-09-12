@@ -5,7 +5,7 @@ export const FIELDS = ['id', 'title', 'country', 'year', 'series', 'denomination
 export type CatalogRow = Record<(typeof FIELDS)[number], string>;
 const clean = (value: string) => value.replace(/\s+/g, ' ').trim();
 const key = (value: string) => clean(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-  .toLowerCase().replace(/\s*[:：]\s*$/, '');
+  .toLowerCase().replace(/[’‘]/g, "'").replace(/\s*[:：]\s*$/, '');
 
 // Extract only labeled facts. Do not copy editorial descriptions, biographies or credits.
 export function parseStamp(html: string, id: number, source: string): CatalogRow | null {
