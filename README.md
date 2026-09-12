@@ -32,9 +32,11 @@ npm test
 
 ## Préparer les modèles
 
+- Le jeu initial inclut 358 vecteurs précalculés dans un navigateur : les 179 images MobileNet et les 179 textes MiniLM. Ils sont importés automatiquement dans une base neuve, avec vérification de leur version et de l’empreinte de leur notice.
 - La page de recherche indique combien d’images et de textes sont prêts. Les boutons **Préparer les images** et **Préparer les textes** calculent les vecteurs manquants dans le navigateur et les enregistrent dans SQLite.
 - Les modèles sont MobileNet v2, avec 1 280 composantes, et `Xenova/paraphrase-multilingual-MiniLM-L12-v2`, quantifié, avec 384 composantes et moyenne normalisée.
 - Le téléchargement initial peut prendre plusieurs minutes ; MiniLM multilingue est plus volumineux qu’un modèle uniquement anglophone. La préparation peut être arrêtée et reprise.
+- Après une préparation complète, `npm run export:embeddings` régénère le fichier de vecteurs du catalogue initial. Cet export exclut les références personnelles.
 - Une image indisponible est signalée dans le bilan et peut être réessayée. Les recherches ne portent que sur les vecteurs disponibles pour la version du modèle sélectionnée.
 - Les photos restent dans le navigateur. Seuls leurs vecteurs numériques sont transmis au serveur local ; les téléchargements de modèles contactent leurs hébergeurs externes.
 - La recherche visuelle compare les vecteurs par similarité cosinus et affiche jusqu’à 24 candidats. Ces rangs ne sont pas des probabilités d’identification.

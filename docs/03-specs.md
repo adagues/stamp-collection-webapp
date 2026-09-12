@@ -14,7 +14,7 @@
 - GET /api/collection → collection possédée et statistiques, valeurs uniquement si connues.
 - PUT /api/collection/[id] → enregistrer possession, quantité et référence personnelle.
 - POST /api/search → résultats lexicaux, sémantiques ou visuels selon les vecteurs disponibles.
-- GET /api/embeddings → progression de préparation et vecteurs déjà calculés.
+- GET /api/embeddings → progression de préparation et identifiants des vecteurs déjà calculés.
 - POST /api/embeddings → sauvegarder un lot de vecteurs validés.
 - GET /api/image/[id] → image du catalogue par relais serveur, pour permettre le calcul visuel sans restriction interorigine.
 - / → catalogue, filtres et édition rapide de la collection.

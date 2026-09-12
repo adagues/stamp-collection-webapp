@@ -9,7 +9,8 @@
     "start": "next start --hostname 0.0.0.0",
     "test": "vitest run",
     "seed": "tsx scripts/seed.ts",
-    "import:catalog": "tsx scripts/import-catalog.ts"
+    "import:catalog": "tsx scripts/import-catalog.ts",
+    "export:embeddings": "tsx scripts/export-embeddings.ts"
   },
   "dependencies": {
     "@tensorflow-models/mobilenet": "2.1.1",
