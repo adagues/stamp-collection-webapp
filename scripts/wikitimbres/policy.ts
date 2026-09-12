@@ -45,7 +45,7 @@ export class SitePolicy {
   static async load(load: Loader, gate: RequestGate): Promise<SitePolicy> {
     // robots.txt is the only bootstrap request; redirects are deliberately refused.
     const response = await load(ROBOTS_URL);
-    if (response.status !== 200 || /<\s*(?:!doctype|html)\b/i.test(response.body) ||
+    if (response.status !== 200 || !/^text\/plain\b/i.test(response.headers['content-type'] ?? '') || /<\s*(?:!doctype|html)\b/i.test(response.body) ||
         (response.body.trim() && !/^\s*user-agent\s*:/im.test(response.body))) {
       throw new Error('robots.txt inaccessible ou invalide ; aucune notice ne sera demandée.');
     }
