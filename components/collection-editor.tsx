@@ -12,9 +12,9 @@ export default function CollectionEditor({ id, initial, onSaved }: { id: string;
     try {
       const response = await fetch(`/api/collection/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(next) });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error);
+      if (!response.ok) { setError(data.error || 'Enregistrement impossible.'); return; }
       setEntry(data); onSaved?.(data); setStatus('Enregistré'); router.refresh();
-    } catch (error) { setError(error instanceof Error ? error.message : 'Enregistrement impossible.'); }
+    } catch { setError('Enregistrement impossible. Vérifiez votre connexion et réessayez.'); }
     finally { setSaving(false); }
   }
   return <form className="collection-editor" onSubmit={event => { event.preventDefault(); void save(); }}>
