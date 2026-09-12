@@ -4,7 +4,7 @@ Un album personnel pour explorer le patrimoine postal français, rechercher un t
 
 ## Démarrer
 
-Prérequis : Node.js 22 ou version ultérieure, npm et un accès Internet pour les illustrations et le premier téléchargement des modèles.
+Prérequis : Node.js 22 LTS à jour (22.12 minimum), ou Node.js 24 ou ultérieur, npm et un accès Internet pour les illustrations et le premier téléchargement des modèles.
 
 ```bash
 npm install

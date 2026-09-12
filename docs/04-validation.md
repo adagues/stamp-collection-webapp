@@ -1,0 +1,22 @@
+# Validation de la livraison
+
+- Contrôles réalisés le 12 septembre 2026, sous Linux avec Node.js 26.
+- `npm install` : réussi.
+- `npm run build` : réussi, avec vérification TypeScript et génération des pages.
+- `npm test` : 18 tests réussis, répartis dans quatre fichiers.
+- Initialisation d’une base neuve : 179 notices, 179 vecteurs visuels et 179 vecteurs sémantiques.
+- Tests SQLite : ajout, mise à jour, retrait, référence personnelle, contraintes, réouverture de la base et conservation lors des imports.
+- Tests de recherche : cosinus, dimensions et valeurs des vecteurs, versions de modèles, fusion des rangs, accents et neutralisation de la syntaxe FTS.
+- Tests des API : possession, erreurs de saisie, timbre absent, origine publique et validation atomique des lots de vecteurs.
+- Tests des données précalculées : couverture complète, initialisation répétable et rejet des empreintes obsolètes.
+- Essai navigateur : ajout d’un timbre, quantité de trois exemplaires, référence personnelle, lecture sur la fiche, rechargement de l’album et retrait.
+- Essai visuel : une illustration du catalogue réimportée est classée première ; cela ne mesure pas la précision sur des photographies de terrain.
+- Essai sémantique : « paysages de montagne » place « Le Mont Dore » en tête des résultats combinés.
+- Essai caméra : capture réussie avec un flux de caméra simulé ; aucun matériel physique n’a été certifié.
+- Essais de panne réseau : message français et accès au catalogue pour MobileNet ; repli lexical pour MiniLM.
+- Affichage vérifié à 1 440 pixels et à 390 pixels de largeur, sans débordement horizontal sur mobile.
+- Import CSV : une notice valide ajoutée dans une base temporaire ; fichier dupliqué refusé sans écriture partielle.
+- Audit npm : sept vulnérabilités signalées, dont deux critiques, dans le socle imposé et ses dépendances ; voir les limites du README avant tout déploiement public.
+- Les trois documents préparatoires ont chacun leur commit, suivi de commits d’implémentation distincts, envoyés progressivement.
+- GitHub refuse l’envoi de `.github/workflows/ci.yml` avec le jeton disponible, car il ne dispose pas de la portée `workflow`.
+- Le workflow est fourni dans un commit local séparé ; son activation distante nécessite l’envoi de ce commit avec les droits GitHub adaptés. La chaîne de commandes a été exécutée localement avec succès.
