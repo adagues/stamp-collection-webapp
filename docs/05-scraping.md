@@ -2,14 +2,15 @@
 
 - Usage personnel et de recherche uniquement. Il appartient à l’utilisateur de vérifier les conditions d’utilisation de wikitimbres.fr avant toute exécution à grande échelle ; `robots.txt` ne constitue pas une autorisation juridique.
 - Les images ne sont **ni téléchargées ni redistribuées** par cet outil, pour des raisons de droit d’auteur. `image_url` et `image_credit` restent vides ; les liens d’images du HTML ne sont jamais suivis.
-- Seules les métadonnées factuelles sont exportées selon [le schéma CSV existant](../data/import/README.md). Couleur et thème alimentent une description factuelle assemblée ; les textes éditoriaux et crédits ne sont pas extraits.
+- Les métadonnées sont exportées selon [le schéma CSV existant](../data/import/README.md). La description dédiée est privilégiée, puis le commentaire dédié ; à défaut, les faits sont assemblés. Les crédits ne sont pas extraits.
 - Une référence de catalogue n’est conservée que sous un libellé reconnu, telle qu’affichée, sans numéro déduit. Les estimations restent vides ; `currency=EUR` est la convention de la colonne d’estimation, sans conversion de la valeur faciale historique.
 - Un titre, un pays et une année valides sont nécessaires ; sinon la notice est ignorée avec un message. Une série absente devient « Série non renseignée ».
 - Prérequis : version Node.js indiquée dans le README, puis `npm install`, depuis la racine du dépôt.
-- Essai local **sans réseau** : `npm test -- tests/wikitimbres-parse.test.ts`. La fixture HTML est synthétique ; aucune page réelle n’a été téléchargée pour ces tests. Les autres tests de collecte simulent le réseau.
+- Parseur corrigé et testé hors ligne sur une page réelle déjà téléchargée, conservée dans `tests/fixtures/wikitimbres-real.html`.
+- Essai local **sans réseau** : `npm test -- tests/wikitimbres-parse.test.ts tests/wikitimbres-parse-real.test.ts`. Les autres tests de collecte simulent le réseau.
 - Petit essai réel ultérieur : `npm run scrape:wikitimbres -- --start 1 --end 3 --limit 3`.
 - Sans arguments : identifiants 1 à 3. `--start` et `--end` sont inclusifs ; plage limitée à 50 identifiants, `--limit` entre 1 et 50 (50 par défaut). La limite compte les identifiants examinés, y compris ceux ignorés.
-- Les chemins essayés sont `/timbres/ID`, avec suivi des redirections autorisées. Le HTML réel et ces routes n’ont pas été validés en direct : des notices peuvent être absentes ou ignorées si leur structure diffère. Vérifier le CSV du petit essai avant d’élargir la plage.
+- Les chemins essayés sont `/timbres/ID`, avec suivi des redirections autorisées. Des notices peuvent être absentes ou ignorées si leur structure diffère de la page testée. Vérifier le CSV du petit essai avant d’élargir la plage.
 - Délai conservateur : 3 secondes minimum entre la fin d’une requête et la suivante, aucune concurrence. Pour ralentir : `WIKITIMBRES_DELAY_MS=5000 npm run scrape:wikitimbres -- --start 1 --end 3`. Valeurs admises : 3000 à 3600000 ms ; un `Crawl-delay` supérieur est respecté, ou entraîne un arrêt s’il dépasse cette borne.
 - Agent annoncé : `StampVaultBot/1.0 (personal catalog research; metadata only)`.
 - `robots.txt` est demandé en premier à chaque lancement et archivé, même avec un cache existant, afin de vérifier les règles actuelles. Échec réseau, statut autre que 200, réponse non textuelle ou invalide : arrêt avec code non nul. Les redirections de `robots.txt` sont refusées par prudence.
