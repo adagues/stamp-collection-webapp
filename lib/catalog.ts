@@ -1,3 +1,4 @@
+import { lexicalQuery } from './search';
 import { getDb } from './database';
 import type { StampView } from './types';
 export const SELECT_STAMPS = `SELECT s.*, COALESCE(c.owned,0) AS owned, COALESCE(c.quantity,0) AS quantity,
@@ -13,7 +14,11 @@ export function getStamp(id: string) {
 export function listStamps(params: URLSearchParams) {
   const where: string[] = []; const args: (string | number)[] = [];
   const query = params.get('q')?.trim().slice(0, 200);
-  if (query) { where.push('(s.title LIKE ? OR s.series LIKE ? OR s.description LIKE ?)'); args.push(...Array(3).fill(`%${query}%`)); }
+  if (query) {
+    const tokens = lexicalQuery(query);
+    where.push(tokens ? 's.rowid IN (SELECT rowid FROM stamps_fts WHERE stamps_fts MATCH ?)' : '0');
+    if (tokens) args.push(tokens);
+  }
   for (const field of ['year', 'series', 'country']) if (params.get(field)) { where.push(`s.${field} = ?`); args.push(params.get(field)!); }
   if (params.get('owned') === '1') where.push('c.owned = 1');
   const clause = where.length ? ` WHERE ${where.join(' AND ')}` : '';

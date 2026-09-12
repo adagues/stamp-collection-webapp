@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Check, Save } from 'lucide-react';
 import type { CollectionEntry } from '@/lib/types';
-export default function CollectionEditor({ id, initial }: { id: string; initial: CollectionEntry }) {
+export default function CollectionEditor({ id, initial, onSaved }: { id: string; initial: CollectionEntry; onSaved?: (entry: CollectionEntry) => void }) {
   const [entry, setEntry] = useState(initial), [saving, setSaving] = useState(false), [status, setStatus] = useState(''), [error, setError] = useState('');
   const router = useRouter();
   useEffect(() => { setEntry(initial); }, [initial.owned, initial.quantity, initial.personal_reference]);
@@ -13,7 +13,7 @@ export default function CollectionEditor({ id, initial }: { id: string; initial:
       const response = await fetch(`/api/collection/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(next) });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error);
-      setEntry(data); setStatus('Enregistré'); router.refresh();
+      setEntry(data); onSaved?.(data); setStatus('Enregistré'); router.refresh();
     } catch (error) { setError(error instanceof Error ? error.message : 'Enregistrement impossible.'); }
     finally { setSaving(false); }
   }
