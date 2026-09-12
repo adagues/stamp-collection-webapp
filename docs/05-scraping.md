@@ -1,0 +1,24 @@
+# Collecte Wikitimbres
+
+- Usage personnel et de recherche uniquement. Il appartient à l’utilisateur de vérifier les conditions d’utilisation de wikitimbres.fr avant toute exécution à grande échelle ; `robots.txt` ne constitue pas une autorisation juridique.
+- Les images ne sont **ni téléchargées ni redistribuées** par cet outil, pour des raisons de droit d’auteur. `image_url` et `image_credit` restent vides ; les liens d’images du HTML ne sont jamais suivis.
+- Seules les métadonnées factuelles sont exportées selon [le schéma CSV existant](../data/import/README.md). Couleur et thème alimentent une description factuelle assemblée ; les textes éditoriaux et crédits ne sont pas extraits.
+- Une référence de catalogue n’est conservée que sous un libellé reconnu, telle qu’affichée, sans numéro déduit. Les estimations restent vides ; `currency=EUR` est la convention de la colonne d’estimation, sans conversion de la valeur faciale historique.
+- Un titre, un pays et une année valides sont nécessaires ; sinon la notice est ignorée avec un message. Une série absente devient « Série non renseignée ».
+- Prérequis : version Node.js indiquée dans le README, puis `npm install`, depuis la racine du dépôt.
+- Essai local **sans réseau** : `npm test -- tests/wikitimbres-parse.test.ts`. La fixture HTML est synthétique ; aucune page réelle n’a été téléchargée pour ces tests. Les autres tests de collecte simulent le réseau.
+- Petit essai réel ultérieur : `npm run scrape:wikitimbres -- --start 1 --end 3 --limit 3`.
+- Sans arguments : identifiants 1 à 3. `--start` et `--end` sont inclusifs ; plage limitée à 50 identifiants, `--limit` entre 1 et 50 (50 par défaut). La limite compte les identifiants examinés, y compris ceux ignorés.
+- Les chemins essayés sont `/timbres/ID`, avec suivi des redirections autorisées. Le HTML réel et ces routes n’ont pas été validés en direct : des notices peuvent être absentes ou ignorées si leur structure diffère. Vérifier le CSV du petit essai avant d’élargir la plage.
+- Délai conservateur : 3 secondes minimum entre la fin d’une requête et la suivante, aucune concurrence. Pour ralentir : `WIKITIMBRES_DELAY_MS=5000 npm run scrape:wikitimbres -- --start 1 --end 3`. Valeurs admises : 3000 à 3600000 ms ; un `Crawl-delay` supérieur est respecté, ou entraîne un arrêt s’il dépasse cette borne.
+- Agent annoncé : `StampVaultBot/1.0 (personal catalog research; metadata only)`.
+- `robots.txt` est demandé en premier à chaque lancement et archivé, même avec un cache existant, afin de vérifier les règles actuelles. Échec réseau, statut autre que 200, réponse non textuelle ou invalide : arrêt avec code non nul. Les redirections de `robots.txt` sont refusées par prudence.
+- Chaque chemin de notice et chaque redirection sont contrôlés avant accès ; les chemins interdits sont ignorés avec leur motif. Les redirections hors du même site ou du catalogue sont refusées.
+- Les réponses sont enregistrées dans `data/cache/wikitimbres/` et réutilisées par défaut, y compris les erreurs HTTP. Un contenu binaire inattendu n’est pas sauvegardé. Les codes 404/410 sont ignorés ; les autres erreurs, dont 429/503, arrêtent la collecte sans nouvelle tentative automatique.
+- `--force` renouvelle les réponses et retraite les identifiants déjà exportés, sans contourner robots ni le délai. À utiliser ponctuellement après correction d’un problème, pas pour relancer en boucle.
+- Le manifeste local conserve les identifiants exportés ; une reprise les ignore sans redemander leurs pages. Un échec d’extraction reste réessayable depuis le cache. Le CSV est reconstruit depuis le manifeste au lancement, puis actualisé après chaque notice.
+- Résultat : `data/import/wikitimbres.csv`. Les écritures sont atomiques ; les identifiants et adresses finales évitent les doublons. Conserver le manifeste pour préserver la reprise et les notices des plages précédentes.
+- Le verrou `data/cache/wikitimbres/run.lock` empêche deux exécutions locales simultanées. Après une interruption brutale, ne le supprimer qu’après avoir vérifié que le processus indiqué dedans est terminé.
+- Cache, manifeste et CSV généré sont exclus de Git ; garder ces données localement. Les pages HTML en cache peuvent contenir des textes et liens tiers : ne pas publier ce cache.
+- Après vérification des notices produites : `npm run import:catalog -- data/import/wikitimbres.csv`. Cette commande distincte met à jour la base ; la collecte seule ne la modifie pas. Un CSV sans notice ne peut pas être importé.
+- Aide : `npm run scrape:wikitimbres -- --help`.

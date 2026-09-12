@@ -51,6 +51,11 @@ npm test
 - Pour sauvegarder, arrêter l’application puis copier `data/vault.sqlite` et, s’ils existent, ses fichiers `-wal` et `-shm`. La base et les références personnelles sont exclues de Git.
 - `DATABASE_PATH` permet de choisir l’emplacement de la base. `IMAGE_HOSTS` ajoute des noms d’hôtes HTTPS autorisés, séparés par des virgules, pour les illustrations d’un catalogue importé.
 
+## Collecte de métadonnées Wikitimbres
+
+- Un script de collecte personnelle respecte `robots.txt`, espace les requêtes et conserve un cache local, sans télécharger les images.
+- Consulter [les précautions et commandes de collecte](docs/05-scraping.md), dont un essai limité à trois identifiants et le test hors réseau.
+
 ## Structure et validation
 
 - [Intention](docs/01-intent.md), [conception et diagrammes](docs/02-design.md), [spécifications](docs/03-specs.md).
