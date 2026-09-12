@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ArrowUpRight, BookOpen, Camera, ChevronRight, FolderHeart, Library, LockKeyhole, ScanLine, Sparkles, Stamp } from 'lucide-react';
+import { ArrowUpRight, BookOpen, ChevronRight, FolderHeart, Library, LockKeyhole, ScanLine, Sparkles, Stamp } from 'lucide-react';
 export default function Shell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const section = pathname === '/collection' ? 'Ma collection' : pathname === '/search' ? 'Identifier & rechercher' : 'Catalogue de France';
