@@ -7,8 +7,11 @@ export function cosine(a: number[], b: number[]) {
   for (let i = 0; i < a.length; i++) { dot += a[i]*b[i]; aa += a[i]*a[i]; bb += b[i]*b[i]; }
   return aa && bb ? Math.max(-1, Math.min(1, dot / Math.sqrt(aa*bb))) : 0;
 }
+const STOP_WORDS = new Set(['le','la','les','un','une','des','de','du','d','l','a','au','aux','et','en','pour','par','sur','avec','dans']);
 export function lexicalQuery(text: string) {
-  return (text.match(/[\p{L}\p{N}]+/gu) || []).slice(0, 20).map(token => `"${token}"*`).join(' OR ');
+  return (text.match(/[\p{L}\p{N}]+/gu) || [])
+    .filter(token => !STOP_WORDS.has(token.toLocaleLowerCase('fr').normalize('NFD').replace(/[\u0300-\u036f]/g, '')))
+    .slice(0, 20).map(token => `"${token}"*`).join(' OR ');
 }
 export function validateVector(vector: unknown, kind: EmbeddingKind): asserts vector is number[] {
   if (!Array.isArray(vector) || vector.length !== DIMENSIONS[kind] || !vector.every(n => typeof n === 'number' && Number.isFinite(n) && Math.abs(n) < 1e6) || !vector.some(n => n !== 0))

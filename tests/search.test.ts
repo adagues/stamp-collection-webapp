@@ -19,6 +19,7 @@ describe('Classement et recherche', () => {
     expect(() => searchStamps(db, '" OR (cérès*) -bleu')).not.toThrow();
     expect(searchStamps(db, 'ceres')).toHaveLength(3);
     expect(searchStamps(db, '!!!')).toEqual([]);
+    expect(lexicalQuery('des timbres de montagne')).toBe('"timbres"* OR "montagne"*');
   });
   it('fusionne les rangs plutôt que des scores incomparables', () => {
     const result = reciprocalRank([[{ id:'a',score:100 },{ id:'b',score:5 }],[{ id:'b',score:.9 },{ id:'c',score:.8 }]]);
