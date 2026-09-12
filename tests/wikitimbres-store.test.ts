@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { afterEach, expect, it } from 'vitest';
 import { parse } from 'csv-parse/sync';
-import { parseStamp } from '../scripts/wikitimbres/parse';
+import { FIELDS, parseStamp } from '../scripts/wikitimbres/parse';
 import { CatalogStore, lockRun } from '../scripts/wikitimbres/store';
 
 const directories: string[] = [];
@@ -17,6 +17,7 @@ it('reprend sans doublons, reconstruit le CSV et accepte l’import existant', a
   const manifest = join(directory, 'manifest.json'), output = join(directory, 'catalog.csv');
   const fixture = await readFile(new URL('./fixtures/wikitimbres.html', import.meta.url), 'utf8');
   const row = parseStamp(fixture, 1, 'https://www.wikitimbres.fr/timbres/1')!;
+  const csvRow = Object.fromEntries(FIELDS.map(field => [field, row[field]]));
   const first = new CatalogStore(manifest, output);
   await first.load();
   await first.save(1, row);
@@ -27,9 +28,9 @@ it('reprend sans doublons, reconstruit le CSV et accepte l’import existant', a
   expect(next.has(1)).toBe(true);
   expect(next.has(2)).toBe(true);
   expect(next.has(3)).toBe(false);
-  expect(parse(await readFile(output, 'utf8'), { columns: true })).toEqual([row]);
+  expect(parse(await readFile(output, 'utf8'), { columns: true })).toEqual([csvRow]);
   await next.save(1, { ...row, denomination: '20 F' });
-  expect(parse(await readFile(output, 'utf8'), { columns: true })).toEqual([{ ...row, denomination: '20 F' }]);
+  expect(parse(await readFile(output, 'utf8'), { columns: true })).toEqual([{ ...csvRow, denomination: '20 F' }]);
   const imported = spawnSync(process.execPath, ['--import', 'tsx', 'scripts/import-catalog.ts', output], {
     cwd: process.cwd(), env: { ...process.env, DATABASE_PATH: join(directory, 'catalog.sqlite') }, encoding: 'utf8',
   });
