@@ -7,3 +7,5 @@ data/*.sqlite*
 coverage/
 playwright-report/
 test-results/
+data/cache/wikitimbres/
+data/import/wikitimbres.csv
