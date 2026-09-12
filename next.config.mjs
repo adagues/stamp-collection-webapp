@@ -1,8 +1,8 @@
 /** @type {import('next').NextConfig} */
 const config = {
   experimental: { serverComponentsExternalPackages: ['better-sqlite3'], cpus: 2 },
-  webpack(config, { isServer }) {
-    if (!isServer) config.resolve.alias = { ...config.resolve.alias, sharp: false, 'onnxruntime-node': false };
+  webpack(config) {
+    config.resolve.alias = { ...config.resolve.alias, sharp: false, 'onnxruntime-node': false };
     return config;
   },
 };
