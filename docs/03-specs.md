@@ -1,0 +1,29 @@
+# Spécifications techniques
+
+- Socle : Next.js 14, App Router, TypeScript, Tailwind CSS et SQLite avec better-sqlite3.
+- Recherche visuelle : TensorFlow.js, MobileNet v2, vecteurs normalisés, similarité cosinus et meilleurs candidats.
+- Recherche sémantique : @xenova/transformers, modèle multilingue MiniLM compact, moyenne des représentations et normalisation.
+- Recherche lexicale : SQLite FTS5 ; fusion des rangs lexicaux et sémantiques.
+- Calcul des modèles dans le navigateur ; préparation persistante des vecteurs du catalogue depuis la page de recherche.
+- Stamp : id, title, country, year, series, denomination, description, image_url, image_credit, source_url, catalog_number nullable, estimated_value nullable, currency.
+- CollectionEntry : stamp_id, owned, quantity (entier de 0 à 9999), personal_reference (500 caractères maximum), updated_at.
+- Embedding : stamp_id, kind (visual ou semantic), model, vector_json ; clé composée.
+- Une quantité positive implique la possession ; décocher remet la quantité à zéro.
+- GET /api/stamps → catalogue filtré et paginé, avec état de collection.
+- GET /api/stamps/[id] → notice et état de collection.
+- GET /api/collection → collection possédée et statistiques, valeurs uniquement si connues.
+- PUT /api/collection/[id] → enregistrer possession, quantité et référence personnelle.
+- POST /api/search → résultats lexicaux, sémantiques ou visuels selon les vecteurs disponibles.
+- GET /api/embeddings → progression de préparation et vecteurs déjà calculés.
+- POST /api/embeddings → sauvegarder un lot de vecteurs validés.
+- GET /api/image/[id] → image du catalogue par relais serveur, pour permettre le calcul visuel sans restriction interorigine.
+- / → catalogue, filtres et édition rapide de la collection.
+- /stamps/[id] → détail et édition de la collection.
+- /collection → collection personnelle et statistiques.
+- /search → recherche par texte, sens, photo ou caméra, préparation des modèles et du catalogue.
+- Catalogue initial : 150 à 300 notices françaises sourcées ; aucun numéro de catalogue sans vérification.
+- Import : CSV documenté dans data/import/, script scripts/import-catalog.ts et reconstruction déterministe de la base.
+- Tests : Vitest pour le classement des recherches et les opérations de collection SQLite.
+- Intégration continue : npm install, npm run build puis npm test à chaque envoi.
+- Exécution : npm install puis npm run dev ; initialisation automatique de la base si nécessaire.
+- Limites : ressemblance approximative, téléchargement initial des modèles, couverture variable des images, aucun service d’expertise.
