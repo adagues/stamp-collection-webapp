@@ -34,9 +34,10 @@ describe('Routes API', () => {
     expect(response.status).toBe(200); expect((await response.json()).items.length).toBeGreaterThan(0);
   });
   it('valide un lot complet avant toute écriture de vecteurs', async () => {
+    const before = getDb().prepare('SELECT count(*) AS n FROM embeddings').get();
     const vector = Array(384).fill(.1);
     const response = await embeddings(request('embeddings',{ kind:'semantic', model:MODELS.semantic, items:[{ id:'fr-1849-001', vector },{ id:'absent', vector }] }));
     expect(response.status).toBe(404);
-    expect(getDb().prepare('SELECT count(*) AS n FROM embeddings').get()).toEqual({ n:0 });
+    expect(getDb().prepare('SELECT count(*) AS n FROM embeddings').get()).toEqual(before);
   });
 });

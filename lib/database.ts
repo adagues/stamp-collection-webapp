@@ -1,4 +1,5 @@
 import Database from 'better-sqlite3';
+import { seedEmbeddings } from './seed-embeddings';
 import { mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import catalog from '../data/catalog.json';
@@ -55,7 +56,10 @@ const globalDb = globalThis as unknown as { stampDatabase?: Database.Database };
 export function getDb() {
   if (!globalDb.stampDatabase) {
     const db = createDatabase(process.env.DATABASE_PATH || join(process.cwd(), 'data', 'vault.sqlite'));
-    if (!(db.prepare('SELECT count(*) AS n FROM stamps').get() as { n: number }).n) importStamps(db, catalog);
+    if (!(db.prepare('SELECT count(*) AS n FROM stamps').get() as { n: number }).n) {
+      importStamps(db, catalog);
+      seedEmbeddings(db);
+    }
     globalDb.stampDatabase = db;
   }
   return globalDb.stampDatabase;
