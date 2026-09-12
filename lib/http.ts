@@ -7,5 +7,8 @@ export function apiError(error: unknown) {
 }
 export function sameOrigin(request: Request) {
   const origin = request.headers.get('origin');
-  if (origin && origin !== new URL(request.url).origin) throw new InputError('Origine de la requête refusée.');
+  if (!origin) return;
+  const expectedHost = request.headers.get('host') || new URL(request.url).host;
+  const protocol = request.headers.get('x-forwarded-proto') || new URL(request.url).protocol.slice(0, -1);
+  if (origin !== `${protocol}://${expectedHost}`) throw new InputError('Origine de la requête refusée.');
 }

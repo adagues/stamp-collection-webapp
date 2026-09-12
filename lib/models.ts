@@ -7,7 +7,8 @@ async function mobileNet() {
     const tf = await import('@tensorflow/tfjs');
     await tf.ready();
     const { load } = await import('@tensorflow-models/mobilenet');
-    return load({ version: 2, alpha: 1 });
+    // The direct TensorFlow mirror avoids the retired TF Hub redirect.
+    return load({ version: 2, alpha: 1, inputRange: [0, 1], modelUrl: 'https://storage.googleapis.com/tfjs-models/savedmodel/mobilenet_v2_1.0_224/model.json' });
   })().catch(error => { visualModel = undefined; throw error; });
   return visualModel;
 }
