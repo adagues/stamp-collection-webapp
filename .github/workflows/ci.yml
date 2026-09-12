@@ -1,0 +1,17 @@
+name: Vérification de l’application
+on: [push, pull_request]
+jobs:
+  verification:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Installer les dépendances
+        run: npm install
+      - name: Compiler l’application
+        run: npm run build
+      - name: Tester les recherches et la collection
+        run: npm test
