@@ -38,23 +38,25 @@ export function loadImage(src: string): Promise<HTMLImageElement> {
     image.src = src;
   });
 }
-export type IndexProgress = { done: number; total: number; failed: number };
+export type IndexProgress = { done: number; total: number; failed: number; unavailable: number };
 export async function prepareCatalog(kind: EmbeddingKind, report: (progress: IndexProgress) => void, signal: AbortSignal) {
   const response = await fetch(`/api/embeddings?kind=${kind}`, { signal });
   if (!response.ok) throw new Error('Impossible de lire la préparation du catalogue.');
-  const { ready, pending } = await response.json() as { ready: string[]; pending: { id: string; title: string; description: string; series: string; year: number }[] };
+  const { ready, pending, unavailable = [] } = await response.json() as { ready: string[]; unavailable?: string[]; pending: { id: string; title: string; description: string; series: string; year: number }[] };
+  // Notices without an illustration are excluded from the visual total instead of
+  // being counted as pending work that can never complete.
   let done = ready.length, failed = 0; const total = done + pending.length;
-  report({ done, total, failed });
+  report({ done, total, failed, unavailable: unavailable.length });
   if (!pending.length) return;
   if (kind === 'visual') await mobileNet(); else await miniLM();
   for (const stamp of pending) {
     if (signal.aborted) throw new DOMException('Préparation arrêtée.', 'AbortError');
     let vector: number[];
     try { vector = kind === 'visual' ? await embedImage(await loadImage(`/api/image/${stamp.id}`)) : await embedText(`${stamp.title}. ${stamp.description}`); }
-    catch { failed++; report({ done, total, failed }); continue; }
+    catch { failed++; report({ done, total, failed, unavailable: unavailable.length }); continue; }
     const saved = await fetch('/api/embeddings', { method: 'POST', signal, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kind, model: MODELS[kind], items: [{ id: stamp.id, vector }] }) });
     if (!saved.ok) throw new Error('Impossible d’enregistrer les vecteurs du catalogue.');
-    done++; report({ done, total, failed });
+    done++; report({ done, total, failed, unavailable: unavailable.length });
     await new Promise(resolve => setTimeout(resolve, 0));
   }
 }

@@ -9,9 +9,16 @@ export function GET(request: Request) {
   if (kind !== 'visual' && kind !== 'semantic') return Response.json({ error: 'Type de modèle invalide.' }, { status: 400 });
   const db = getDb();
   const ready = db.prepare('SELECT stamp_id FROM embeddings WHERE kind=? AND model=?').all(kind, MODELS[kind]) as { stamp_id: string }[];
+  // A notice without an illustration can never get a visual vector: report it as
+  // unavailable instead of leaving it "pending" forever.
+  const missing = kind === 'visual' ? " AND image_url <> ''" : '';
   const pending = db.prepare(`SELECT id, title, description, series, year FROM stamps WHERE id NOT IN
-    (SELECT stamp_id FROM embeddings WHERE kind=? AND model=?) ORDER BY id`).all(kind, MODELS[kind]);
-  return Response.json({ ready: ready.map(row => row.stamp_id), pending, model: MODELS[kind] });
+    (SELECT stamp_id FROM embeddings WHERE kind=? AND model=?)${missing} ORDER BY id`).all(kind, MODELS[kind]);
+  const unavailable = kind === 'visual'
+    ? (db.prepare(`SELECT id FROM stamps WHERE image_url = '' AND id NOT IN
+        (SELECT stamp_id FROM embeddings WHERE kind=? AND model=?) ORDER BY id`).all(kind, MODELS[kind]) as { id: string }[]).map(row => row.id)
+    : [];
+  return Response.json({ ready: ready.map(row => row.stamp_id), pending, unavailable, model: MODELS[kind] });
 }
 export async function POST(request: Request) {
   try {

@@ -1,4 +1,6 @@
-# Validation de la livraison
+# Validation de la livraison initiale (archive)
+
+> Résultats historiques du 12 septembre 2026, **pas la validation de la version courante**. Le catalogue et les vecteurs distribués ont depuis été remplacés par une démonstration synthétique sans vecteurs précalculés. Voir [assainissement courant](06-assainissement.md) et [contenus tiers](../DATA-LICENSE.md). Les résultats visuels ci-dessous ne sont pas reproductibles avec la seule démonstration fictive.
 
 - Contrôles réalisés le 12 septembre 2026, sous Linux avec Node.js 26.
 - `npm install` : réussi.

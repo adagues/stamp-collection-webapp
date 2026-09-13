@@ -3,12 +3,29 @@ import { DomUtils, parseDocument } from 'htmlparser2';
 export const FIELDS = ['id', 'title', 'country', 'year', 'series', 'denomination', 'description',
   'image_url', 'image_credit', 'source_url', 'catalog_number', 'estimated_value', 'currency'] as const;
 export type CatalogRow = Record<(typeof FIELDS)[number], string>;
+export type ParseOptions = { images?: boolean };
+// Attribution string only. It records where the file is hosted and that rights belong to
+// third parties; it does NOT assert any licence or permission. Legal review is separate
+// and pending — see docs/05-scraping.md.
+export const IMAGE_CREDIT = 'Illustration hébergée par www.wikitimbres.fr — droits des auteurs et de l’éditeur réservés ; aucune autorisation de réutilisation n’est présumée (voir docs/05-scraping.md).';
+export const IMAGE_HOST = 'www.wikitimbres.fr';
 const clean = (value: string) => value.replace(/\s+/g, ' ').trim();
+
+// Only the official stamp scan under /public/stamps/<size>/ counts; logos, icons and
+// member-contributed "visuels" are deliberately excluded.
+export function stampImageUrl(candidate: string, base: string): string {
+  let url: URL;
+  try { url = new URL(candidate, base); } catch { return ''; }
+  if (url.protocol !== 'https:' || url.hostname !== IMAGE_HOST || url.port || url.username ||
+      url.password || url.search || url.hash) return '';
+  if (!/^\/public\/stamps\/\d{2,4}\/[A-Za-z0-9][A-Za-z0-9_.-]{0,120}\.(?:jpg|jpeg|png|webp)$/.test(url.pathname)) return '';
+  return url.href;
+}
 const key = (value: string) => clean(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '')
   .toLowerCase().replace(/[’‘]/g, "'").replace(/\s*[:：]\s*$/, '');
 
 // Keep the CSV schema stable; expose color separately for parser consumers.
-export function parseStamp(html: string, id: number, source: string): (CatalogRow & { color: string }) | null {
+export function parseStamp(html: string, id: number, source: string, options: ParseOptions = {}): (CatalogRow & { color: string }) | null {
   const document = parseDocument(html);
   for (const node of DomUtils.findAll(node => ['script', 'style', 'nav', 'footer', 'aside'].includes(node.name), document.children)) {
     DomUtils.removeElement(node);
@@ -79,14 +96,26 @@ export function parseStamp(html: string, id: number, source: string): (CatalogRo
   const denomination = get('Valeur', 'Valeur faciale', 'Faciale');
   const color = get('Couleur', 'Couleurs');
   const theme = get('Thème', 'Thématique');
-  // No guessed catalog reference or market valuation; retain a labeled reference verbatim.
-  const catalog = get('Tellier', 'N° Y&T', 'Yvert et Tellier', 'Yvert & Tellier');
+  // No guessed catalog reference or market valuation; retain a labeled reference verbatim,
+  // but drop the site's own placeholders (« xxxxx », « - », « ? »…) which mean "unknown".
+  const rawCatalog = get('Tellier', 'N° Y&T', 'Yvert et Tellier', 'Yvert & Tellier');
+  const catalog = /^(?:x+|-+|\?+|n\/?a|nc|néant)$/i.test(rawCatalog) ? '' : rawCatalog;
   const description = descriptions.get('description') || descriptions.get('commentaire') ||
     [`Pays : ${country}`, `Année : ${year}`, denomination && `Valeur faciale : ${denomination}`,
       color && `Couleur : ${color}`, get('Groupe', 'Série') && `Groupe : ${series}`,
       theme && `Thème : ${theme}`].filter(Boolean).join(' ; ');
   if (description.length > 2000) return skip('description trop longue');
+  // The main scan sits inside the central thumbnail; nothing else is trusted as the stamp.
+  let image = '';
+  if (options.images) {
+    const thumbnail = elements.find(node => hasClass(node, 'thumbnail') &&
+      DomUtils.findAll(child => child.name === 'img', DomUtils.getChildren(node)).length > 0);
+    const candidates = DomUtils.findAll(node => node.name === 'img', thumbnail ? [thumbnail] : []);
+    const found = candidates.map(node => stampImageUrl(node.attribs.src ?? '', source)).find(Boolean);
+    if (found) image = found;
+    else console.log(`Notice ${id} : aucune illustration principale conforme ; métadonnées conservées sans illustration.`);
+  }
   return { id: `wikitimbres-${id}`, title, country, year, series, denomination, color, description,
-    image_url: '', image_credit: '', source_url: source, catalog_number: catalog,
+    image_url: image, image_credit: image ? IMAGE_CREDIT : '', source_url: source, catalog_number: catalog,
     estimated_value: '', currency: 'EUR' };
 }

@@ -17,7 +17,7 @@ describe('Classement et recherche', () => {
   it('neutralise la syntaxe FTS fournie par une saisie libre', () => {
     expect(lexicalQuery('" OR (cérès*) -bleu')).toBe('"OR"* OR "cérès"* OR "bleu"*');
     expect(() => searchStamps(db, '" OR (cérès*) -bleu')).not.toThrow();
-    expect(searchStamps(db, 'ceres')).toHaveLength(3);
+    expect(searchStamps(db, 'phares')).toHaveLength(3);
     expect(searchStamps(db, '!!!')).toEqual([]);
     expect(lexicalQuery('des timbres de montagne')).toBe('"timbres"* OR "montagne"*');
   });

@@ -26,6 +26,9 @@ export class PageCache {
       }
     }
     return this.gate.run(async () => {
+      if (process.env.WIKITIMBRES_OFFLINE === '1') {
+        throw new Error(`Mode hors ligne demandé : ${new URL(url).pathname} n’est pas en cache et aucune requête n’est permise.`);
+      }
       console.log(`Téléchargement : ${new URL(url).pathname}`);
       const response = await fetch(url, {
         headers: { 'User-Agent': USER_AGENT, Accept: 'text/html,text/plain;q=0.9' },
