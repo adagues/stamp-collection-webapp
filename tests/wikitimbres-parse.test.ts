@@ -21,7 +21,8 @@ describe('extraction locale Wikitimbres', () => {
   });
   it('produit les colonnes importables et échappe les guillemets et virgules', () => {
     const row = parseStamp(fixture, 1, source)!;
-    const result = parse(csv([row]), { columns: true });
+    // csv-parse renvoie `unknown` sans annotation : le schéma attendu est celui de FIELDS.
+    const result = parse(csv([row]), { columns: true }) as Record<(typeof FIELDS)[number], string>[];
     expect(Object.keys(result[0])).toEqual([...FIELDS]);
     expect(result).toEqual([Object.fromEntries(FIELDS.map(field => [field, row[field]]))]);
   });

@@ -1,12 +1,12 @@
 # Importer un catalogue
 
-- Le fichier `data/catalog.json` contient 179 notices françaises vérifiées le 12 septembre 2026 sur Phil-Ouest, de 1849 à 1963, avec quelques variétés distinctes.
-- Chaque notice conserve son adresse source ; les numéros renseignés sont ceux indiqués sous « N° Y&T » sur cette source, sans invention ni certification indépendante.
-- Les illustrations restent hébergées par Phil-Ouest, avec droits réservés ; elles ne sont pas placées sous licence MIT. Leur disponibilité dépend du site source.
-- Le code est sous licence MIT ; aucune autorisation de redistribution des illustrations n’est présumée.
-- La valeur faciale historique est distincte de la valeur estimée de collection. Les estimations sont inconnues et restent vides.
-- Les noms de séries sont regroupés pour faciliter la navigation ; les variantes restent rattachées à leur notice source.
-- Importer uniquement des données et illustrations dont vous pouvez faire cet usage.
+- Le fichier `data/catalog.json` livré est une **démonstration entièrement fictive** : pays « Démoland », notices, séries et numéros inventés, adresses source en `.invalid` non fonctionnelles. Aucune notice, cotation ni illustration n'est reprise d'un catalogue tiers.
+- Ce jeu sert à essayer les filtres, la recherche lexicale, le tri et la pagination. Il ne permet pas d'identifier de vrais timbres et n'est pas une référence philatélique.
+- Aucune illustration n'est fournie ni référencée : `image_url` est vide dans tout le jeu de démonstration. Aucun relais d'image n'est donc sollicité par défaut.
+- Pour une collection réelle, importer des données dont vous avez vérifié les droits, en conservant provenance, crédits et conditions applicables. Voir [contenus tiers et périmètre de licence](../../DATA-LICENSE.md).
+- Le code est sous licence MIT ; cette licence ne confère **aucun droit** sur les contenus importés, leurs textes ou leurs illustrations, et aucune autorisation de redistribution n'est présumée.
+- La valeur faciale historique est distincte de la valeur estimée de collection. Les estimations restent vides tant qu'une source vérifiée ne les renseigne pas.
+- Les fichiers importés (`data/import/`), caches, exports et bases locales sont exclus de Git : ils ne sont pas destinés à la publication.
 
 ## Format CSV
 
@@ -25,3 +25,4 @@
 - Un identifiant existant met à jour sa notice, conserve sa collection et invalide ses vecteurs pour les recalculer.
 - Les autres pays utilisent le même format ; aucune couverture mondiale complète n’est annoncée.
 - `npm run seed` initialise une base vide à partir du catalogue fourni, sans effacer une collection existante.
+- Afficher une illustration importée exige d'autoriser son hôte via `IMAGE_HOSTS`. C'est une autorisation **technique** : le relais télécharge et retransmet les octets, ce qui demande une permission distincte du simple accès public.

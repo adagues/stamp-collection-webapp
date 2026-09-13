@@ -3,9 +3,22 @@ node_modules/
 *.tsbuildinfo
 .env*
 !.env.example
-data/*.sqlite*
+# Données personnelles, copies de travail et journaux SQLite (tous emplacements)
+*.sqlite*
+*.db
+*.db-wal
+*.db-shm
 coverage/
 playwright-report/
 test-results/
-data/cache/wikitimbres/
-data/import/wikitimbres.csv
+
+# Contenus importés et dérivés : locaux, jamais inclus dans la distribution
+/data/cache/
+/data/import/*
+!/data/import/README.md
+/data/export/
+/data/exports/
+/data/local/
+/evidence/
+/*-evidence/
+/backups/

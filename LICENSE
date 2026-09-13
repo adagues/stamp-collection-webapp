@@ -19,3 +19,9 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+Scope notice (not a change to the MIT terms above): this license covers the
+project's own software, original documentation and synthetic examples only.
+It grants no rights to third-party content, imported data, illustrations,
+dependencies or model weights. See DATA-LICENSE.md for provenance
+and known permissions or restrictions.

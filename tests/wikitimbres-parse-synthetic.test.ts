@@ -2,24 +2,26 @@ import { readFileSync } from 'node:fs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { parseStamp } from '../scripts/wikitimbres/parse';
 
-const fixture = readFileSync(new URL('./fixtures/wikitimbres-real.html', import.meta.url), 'utf8');
+// Fixture synthétique : structure de notice représentative, contenu entièrement inventé.
+// Aucune page tierce n'est publiée dans le dépôt (voir DATA-LICENSE.md).
+const fixture = readFileSync(new URL('./fixtures/wikitimbres-synthetic.html', import.meta.url), 'utf8');
 const source = 'https://www.wikitimbres.fr/timbres/1';
 
 afterEach(() => vi.restoreAllMocks());
 
-describe('page réelle Wikitimbres, sans réseau', () => {
+describe('notice structurée, sans réseau', () => {
   it('extrait les valeurs réellement présentes et signale le pays par défaut', () => {
     const log = vi.spyOn(console, 'log').mockImplementation(() => {});
     const row = parseStamp(fixture, 1, source)!;
-    expect(row.title).toContain('Cérès');
-    expect(row.title).toBe('1850 REPUB FRANC - type Cérès');
-    expect(row.color).toBe('bistre-jaune');
+    expect(row.title).toContain('Éclat');
+    expect(row.title).toBe('Phare de l’Éclat — type Démo');
+    expect(row.color).toBe('bleu de cobalt');
     expect(row.denomination).toBe('10 c');
-    expect(row.series).toBe('Cérès 1849-1850');
-    expect(row.year).toBe('1850');
+    expect(row.series).toBe('Phares et balises 1902-1904');
+    expect(row.year).toBe('1902');
     expect(row.catalog_number).toBe('1');
     expect(row.country).toBe('France');
-    expect(row.description).toBe('Type Cérès. Légende REPUB FRANC');
+    expect(row.description).toBe('Type Démo. Légende PHARE FICTIF');
     expect(row.image_url).toBe('');
     expect(row.image_credit).toBe('');
     expect(log).toHaveBeenCalledWith(expect.stringContaining('France retenue par défaut'));
@@ -27,10 +29,10 @@ describe('page réelle Wikitimbres, sans réseau', () => {
 
   it('ne déduit ni année du titre ou du groupe, ni référence d’un autre catalogue', () => {
     const log = vi.spyOn(console, 'log').mockImplementation(() => {});
-    expect(parseStamp(fixture.replace('12/09/1850', ''), 1, source)).toBeNull();
+    expect(parseStamp(fixture.replace('12/09/1902', ''), 1, source)).toBeNull();
     expect(log).toHaveBeenCalledWith(expect.stringContaining('année d’émission absente ou invalide'));
     expect(parseStamp(fixture.replace('>Tellier<', '>Autre catalogue<'), 1, source)!.catalog_number).toBe('');
-    expect(parseStamp(fixture.replace('12/09/1850', '12/09/1851'), 1, source)!.year).toBe('1851');
+    expect(parseStamp(fixture.replace('12/09/1902', '12/09/1903'), 1, source)!.year).toBe('1903');
   });
 
   it('respecte un pays explicite dans le fil d’Ariane', () => {

@@ -21,6 +21,6 @@ export async function GET(_: Request, { params }: { params: { id: string } }) {
       if (cache.size >= 50) cache.delete(cache.keys().next().value!);
       cache.set(url.href, image);
     }
-    return new Response(image.body as BodyInit, { headers: { 'Content-Type': image.type, 'Cache-Control': 'public, max-age=86400', 'X-Content-Type-Options': 'nosniff' } });
+    return new Response(image.body as BodyInit, { headers: { 'Content-Type': image.type, 'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff' } });
   } catch { return Response.json({ error: 'Le site source ne fournit pas cette illustration actuellement.' }, { status: 502 }); }
 }
