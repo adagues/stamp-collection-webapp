@@ -1,9 +1,9 @@
 # Spécifications techniques
 
-- Socle : Next.js 14, App Router, TypeScript, Tailwind CSS et Turso/libSQL avec `@libsql/client`.
+- Socle : Next.js 14, App Router, TypeScript, Tailwind CSS, pilote `@tursodatabase/serverless` pour les bases Turso distantes et `@libsql/client` pour les bases libSQL/locales.
 - Recherche visuelle : TensorFlow.js, MobileNet v2, vecteurs normalisés, similarité cosinus calculée par les fonctions vectorielles libSQL et meilleurs candidats.
 - Recherche sémantique : @xenova/transformers, modèle multilingue MiniLM compact, moyenne des représentations et normalisation.
-- Recherche lexicale : index FTS5 libSQL maintenu par triggers ; fusion des rangs lexicaux et sémantiques.
+- Recherche lexicale : table ordinaire normalisée, compatible avec le moteur Turso MVCC sans table virtuelle ; fusion des rangs lexicaux et sémantiques.
 - Calcul des modèles dans le navigateur ; préparation persistante des vecteurs du catalogue depuis la page de recherche.
 - Stamp : id, title, country, year, series, denomination, description, image_url, image_credit, source_url, catalog_number nullable, estimated_value nullable, currency.
 - CollectionEntry : stamp_id, owned, quantity (entier de 0 à 9999), personal_reference (500 caractères maximum), updated_at.

@@ -1,5 +1,5 @@
 import type { Client, Row, Value } from '@libsql/client';
-import { lexicalQuery } from './search';
+import { lexicalPredicate, lexicalTokens } from './lexical';
 import { getDb } from './database';
 import type { StampView } from './types';
 
@@ -41,9 +41,10 @@ export async function listStamps(params: URLSearchParams) {
   const where: string[] = []; const args: (string | number)[] = [];
   const query = params.get('q')?.trim().slice(0, 200);
   if (query) {
-    const tokens = lexicalQuery(query);
-    where.push(tokens ? 's.rowid IN (SELECT rowid FROM stamps_fts WHERE stamps_fts MATCH ?)' : '0');
-    if (tokens) args.push(tokens);
+    const tokens = lexicalTokens(query);
+    const predicate = lexicalPredicate('search_text', tokens);
+    where.push(tokens.length ? `s.id IN (SELECT stamp_id FROM stamp_search WHERE ${predicate.sql})` : '0');
+    args.push(...predicate.args);
   }
   for (const field of ['year', 'series', 'country']) if (params.get(field)) { where.push(`s.${field} = ?`); args.push(params.get(field)!); }
   if (params.get('owned') === '1') where.push('c.owned = 1');
