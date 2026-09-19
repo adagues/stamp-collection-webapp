@@ -1,6 +1,6 @@
 # Persistance distante avec Turso
 
-Turso héberge la base libSQL distante. L’application Next.js et ses routes API peuvent rester sur Vercel ou être déployées sur un autre hébergeur Node.js : elles accèdent toutes à la même base avec `@libsql/client`. L’URL et le jeton restent exclusivement côté serveur.
+Turso héberge la base SQLite distante. L’application Next.js et ses routes API peuvent rester sur Vercel ou être déployées sur un autre hébergeur Node.js : elles accèdent toutes à la même base avec le pilote serverless officiel pour les URL `turso://`. Les anciennes bases `libsql://` restent prises en charge avec `@libsql/client`, qui sert aussi aux bases locales `file:`. L’URL et le jeton restent exclusivement côté serveur.
 
 ## Créer et connecter la base
 
@@ -16,13 +16,13 @@ turso db tokens create stamp-collection
 Reporter les deux dernières valeurs dans l’environnement du serveur :
 
 ```dotenv
-TURSO_DATABASE_URL=libsql://nom-base-organisation.turso.io
+TURSO_DATABASE_URL=turso://nom-base-organisation.turso.io
 TURSO_AUTH_TOKEN=jeton-prive
 ```
 
 Sur Vercel, définir ces variables pour l’environnement Production, puis redéployer. Ne jamais les préfixer par `NEXT_PUBLIC_` ni envoyer `.env.local` dans Git. Au premier accès, l’application crée de façon idempotente les tables, l’index FTS5 et ses triggers. Si la table `stamps` est vide, elle amorce le catalogue fictif distribué ; elle ne remplace pas une base déjà peuplée.
 
-Le [guide officiel Next.js + Turso](https://docs.turso.tech/sdk/ts/guides/nextjs) décrit la création des identifiants et la configuration de `@libsql/client`.
+Le [guide officiel des pilotes TypeScript Turso](https://docs.turso.tech/sdk/ts/reference) distingue le pilote serverless des nouvelles bases `turso://` et le client libSQL des bases `libsql://`.
 
 ## Développement local
 

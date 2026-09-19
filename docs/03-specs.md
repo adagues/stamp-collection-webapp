@@ -1,6 +1,6 @@
 # Spécifications techniques
 
-- Socle : Next.js 14, App Router, TypeScript, Tailwind CSS et Turso/libSQL avec `@libsql/client`.
+- Socle : Next.js 14, App Router, TypeScript, Tailwind CSS, pilote `@tursodatabase/serverless` pour les bases Turso distantes et `@libsql/client` pour les bases libSQL/locales.
 - Recherche visuelle : TensorFlow.js, MobileNet v2, vecteurs normalisés, similarité cosinus calculée par les fonctions vectorielles libSQL et meilleurs candidats.
 - Recherche sémantique : @xenova/transformers, modèle multilingue MiniLM compact, moyenne des représentations et normalisation.
 - Recherche lexicale : index FTS5 libSQL maintenu par triggers ; fusion des rangs lexicaux et sémantiques.

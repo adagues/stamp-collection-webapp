@@ -1,4 +1,5 @@
-import { createClient, type Client, type Config, type InStatement } from '@libsql/client';
+import { createClient as createLibsqlClient, type Client, type Config, type InStatement } from '@libsql/client';
+import { createClient as createTursoClient } from '@tursodatabase/serverless/compat';
 import { mkdirSync } from 'node:fs';
 import { dirname, isAbsolute, resolve } from 'node:path';
 import catalog from '../data/catalog.json';
@@ -53,7 +54,7 @@ function normalizeLocation(location: string) {
     }
     return location;
   }
-  if (/^(?:libsql|https|wss):\/\//.test(location)) return location;
+  if (/^(?:turso|libsql|https|wss):\/\//.test(location)) return location;
   const filename = resolve(location);
   mkdirSync(dirname(filename), { recursive: true });
   return `file:${filename}`;
@@ -62,7 +63,11 @@ function normalizeLocation(location: string) {
 export async function createDatabase(location: string, authToken?: string): Promise<Client> {
   const url = normalizeLocation(location);
   const config: Config = authToken ? { url, authToken } : { url };
-  const db = createClient(config);
+  // New Turso databases use the turso:// protocol and the fetch-only serverless driver.
+  // Existing libSQL databases and local file: databases keep the libSQL client.
+  const db = url.startsWith('turso://')
+    ? createTursoClient(config) as unknown as Client
+    : createLibsqlClient(config);
   try {
     if (url.startsWith('file:')) await db.execute('PRAGMA busy_timeout = 5000');
     await db.batch(SCHEMA, 'write');
@@ -126,7 +131,7 @@ function databaseCredentials() {
     return { url: 'file:data/vault.sqlite', token: undefined };
   }
   const token = process.env.TURSO_AUTH_TOKEN?.trim() || undefined;
-  if (configuredUrl.startsWith('libsql://') && !token) {
+  if (/^(?:turso|libsql):\/\//.test(configuredUrl) && !token) {
     throw new Error('TURSO_AUTH_TOKEN est obligatoire avec une base Turso distante.');
   }
   return { url: configuredUrl, token };

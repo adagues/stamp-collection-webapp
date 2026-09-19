@@ -55,10 +55,10 @@ npm test
 - Pour ajouter d’autres pays : consulter [le schéma CSV](data/import/README.md), puis exécuter `npm run import:catalog -- chemin/catalogue.csv`.
 - Un import met à jour les identifiants existants sans effacer leur collection, et invalide leurs vecteurs. Relancer ensuite la préparation.
 - `npm run seed` vérifie la connexion et initialise une base vide de façon déterministe, sans supprimer une base existante.
-- En production, `TURSO_DATABASE_URL` est obligatoire : l’application échoue explicitement au lieu de créer un fichier éphémère chez l’hébergeur. Une URL `libsql://` nécessite aussi `TURSO_AUTH_TOKEN`.
+- En production, `TURSO_DATABASE_URL` est obligatoire : l’application échoue explicitement au lieu de créer un fichier éphémère chez l’hébergeur. Une URL distante `turso://` ou `libsql://` nécessite aussi `TURSO_AUTH_TOKEN`.
 - La sauvegarde, la restauration et la rétention de la base distante se gèrent côté Turso. Conserver une sauvegarde SQLite séparée avant toute migration d’une collection existante.
 - `IMAGE_HOSTS` ajoute des noms d’hôtes HTTPS autorisés techniquement, séparés par des virgules. Le relais télécharge et retransmet les images (ce n’est pas un simple lien), avec `Cache-Control: private, no-store` ; vérifier les droits avant activation.
-- Voir [la configuration et la migration Turso](docs/07-turso.md), ainsi que le [guide officiel Next.js + Turso](https://docs.turso.tech/sdk/ts/guides/nextjs).
+- Voir [la configuration et la migration Turso](docs/07-turso.md), ainsi que la [référence officielle des pilotes TypeScript Turso](https://docs.turso.tech/sdk/ts/reference).
 
 ## Collecte de métadonnées Wikitimbres
 
