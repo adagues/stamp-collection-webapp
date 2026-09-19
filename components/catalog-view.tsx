@@ -2,9 +2,9 @@ import Link from 'next/link';
 import { ArrowLeft, ArrowRight, Grid2X2, Search, SlidersHorizontal, Stamp } from 'lucide-react';
 import { catalogFilters, listStamps } from '@/lib/catalog';
 import StampCard from './stamp-card';
-export default function CatalogView({ params, collection = false }: { params: URLSearchParams; collection?: boolean }) {
+export default async function CatalogView({ params, collection = false }: { params: URLSearchParams; collection?: boolean }) {
   if (collection) params.set('owned', '1');
-  const result = listStamps(params), filters = catalogFilters();
+  const [result, filters] = await Promise.all([listStamps(params), catalogFilters()]);
   const base = collection ? '/collection' : '/';
   function pageLink(page: number) { const query = new URLSearchParams(params); query.set('page', String(page)); return `${base}?${query}`; }
   return <section aria-label="Liste des timbres"><div className="catalog-intro"><h2>{collection ? 'Mes timbres' : 'À la découverte du catalogue'}</h2><span>{collection ? 'Un patrimoine qui grandit' : 'De la première Cérès aux belles commémorations'}</span></div>

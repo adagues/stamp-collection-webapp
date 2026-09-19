@@ -11,43 +11,44 @@ const stamp = catalog[0];
 const vector = (kind: EmbeddingKind) => Array(DIMENSIONS[kind]).fill(0.1);
 
 describe('amorçage des vecteurs fournis avec le catalogue', () => {
-  it('n’insère rien lorsque le fichier livré ne contient aucun vecteur', () => {
-    const db = createDatabase(':memory:');
-    importStamps(db, catalog);
-    seedEmbeddings(db);
-    expect(db.prepare('SELECT count(*) AS n FROM embeddings').get()).toEqual({ n: 0 });
+  it('n’insère rien lorsque le fichier livré ne contient aucun vecteur', async () => {
+    const db = await createDatabase(':memory:');
+    await importStamps(db, catalog);
+    await seedEmbeddings(db);
+    expect(Number((await db.execute('SELECT count(*) AS n FROM embeddings')).rows[0]?.n)).toBe(0);
     db.close();
   });
 
-  it('accepte un vecteur local valide dont l’empreinte correspond à sa notice', () => {
-    const db = createDatabase(':memory:');
-    importStamps(db, [stamp]);
+  it('accepte un vecteur local valide dont l’empreinte correspond à sa notice', async () => {
+    const db = await createDatabase(':memory:');
+    await importStamps(db, [stamp]);
     const rows = (['visual', 'semantic'] as const).map(kind => ({
       stamp_id: stamp.id, kind, model: MODELS[kind],
       content_hash: contentHash(stamp, kind), vector: vector(kind),
     }));
-    seedEmbeddings(db, rows);
-    const stored = db.prepare('SELECT kind, vector_json FROM embeddings ORDER BY kind').all() as { kind: EmbeddingKind; vector_json: string }[];
+    await seedEmbeddings(db, rows);
+    const stored = (await db.execute('SELECT kind, vector_json FROM embeddings ORDER BY kind')).rows;
     expect(stored).toHaveLength(2);
     for (const row of stored) {
-      const parsed = JSON.parse(row.vector_json);
-      expect(parsed).toHaveLength(DIMENSIONS[row.kind]);
+      const kind = String(row.kind) as EmbeddingKind;
+      const parsed = JSON.parse(String(row.vector_json));
+      expect(parsed).toHaveLength(DIMENSIONS[kind]);
       expect(parsed.every(Number.isFinite)).toBe(true);
     }
-    seedEmbeddings(db, rows);
-    expect(db.prepare('SELECT count(*) AS n FROM embeddings').get()).toEqual({ n: 2 });
+    await seedEmbeddings(db, rows);
+    expect(Number((await db.execute('SELECT count(*) AS n FROM embeddings')).rows[0]?.n)).toBe(2);
     db.close();
   });
 
-  it('refuse un vecteur dont le contenu source a changé', () => {
-    const db = createDatabase(':memory:');
+  it('refuse un vecteur dont le contenu source a changé', async () => {
+    const db = await createDatabase(':memory:');
     const rows = [{
       stamp_id: stamp.id, kind: 'visual' as const, model: MODELS.visual,
       content_hash: contentHash(stamp, 'visual'), vector: vector('visual'),
     }];
-    importStamps(db, [{ ...stamp, image_url: 'https://exemple.invalid/image.jpg', description: 'Notice révisée' }]);
-    seedEmbeddings(db, rows);
-    expect(db.prepare('SELECT count(*) AS n FROM embeddings').get()).toEqual({ n: 0 });
+    await importStamps(db, [{ ...stamp, image_url: 'https://exemple.invalid/image.jpg', description: 'Notice révisée' }]);
+    await seedEmbeddings(db, rows);
+    expect(Number((await db.execute('SELECT count(*) AS n FROM embeddings')).rows[0]?.n)).toBe(0);
     db.close();
   });
 });

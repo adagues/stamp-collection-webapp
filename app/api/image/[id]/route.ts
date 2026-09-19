@@ -2,7 +2,7 @@ import { getStamp } from '@/lib/catalog';
 export const dynamic = 'force-dynamic';
 const cache = new Map<string, { body: Uint8Array; type: string }>();
 export async function GET(_: Request, { params }: { params: { id: string } }) {
-  const stamp = getStamp(params.id);
+  const stamp = await getStamp(params.id);
   if (!stamp?.image_url) return Response.json({ error: 'Illustration indisponible.' }, { status: 404 });
   try {
     const url = new URL(stamp.image_url);

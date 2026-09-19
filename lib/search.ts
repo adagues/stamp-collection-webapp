@@ -1,4 +1,4 @@
-import type Database from 'better-sqlite3';
+import type { Client } from '@libsql/client';
 import { InputError } from './collection';
 import { DIMENSIONS, MODELS, type EmbeddingKind } from './types';
 export function cosine(a: number[], b: number[]) {
@@ -22,14 +22,25 @@ export function reciprocalRank(lists: { id: string; score: number }[][]) {
   for (const list of lists) list.forEach((row, index) => scores.set(row.id, (scores.get(row.id) || 0) + 1 / (60 + index + 1)));
   return [...scores].map(([id, score]) => ({ id, score })).sort((a,b) => b.score-a.score || a.id.localeCompare(b.id));
 }
-export function searchStamps(db: Database.Database, text: string, kind?: EmbeddingKind, vector?: number[]) {
+export async function searchStamps(db: Client, text: string, kind?: EmbeddingKind, vector?: number[]) {
   const query = lexicalQuery(text);
-  const lexical = query ? db.prepare(`SELECT s.id, -bm25(stamps_fts) AS score FROM stamps_fts
-    JOIN stamps s ON s.rowid=stamps_fts.rowid WHERE stamps_fts MATCH ? ORDER BY bm25(stamps_fts), s.id LIMIT 100`).all(query) as { id: string; score: number }[] : [];
-  if (!kind || !vector) return lexical.slice(0, 24);
-  validateVector(vector, kind);
-  const rows = db.prepare('SELECT stamp_id AS id, vector_json FROM embeddings WHERE kind=? AND model=?').all(kind, MODELS[kind]) as { id: string; vector_json: string }[];
-  const similar = rows.map(row => ({ id: row.id, score: cosine(vector, JSON.parse(row.vector_json)) }))
-    .sort((a,b) => b.score-a.score || a.id.localeCompare(b.id)).slice(0, 100);
+  if (kind && vector) validateVector(vector, kind);
+  const lexicalPromise = query
+    ? db.execute({ sql: `SELECT s.id, -bm25(stamps_fts) AS score FROM stamps_fts
+        JOIN stamps s ON s.rowid=stamps_fts.rowid WHERE stamps_fts MATCH ? ORDER BY bm25(stamps_fts), s.id LIMIT 100`, args: [query] })
+    : Promise.resolve(null);
+  const embeddingsPromise = kind && vector
+    ? db.execute({
+        sql: `SELECT stamp_id AS id,
+          1.0 - vector_distance_cos(vector32(vector_json), vector32(?)) AS score
+          FROM embeddings WHERE kind=? AND model=?
+          ORDER BY score DESC, stamp_id LIMIT 100`,
+        args: [JSON.stringify(vector), kind, MODELS[kind]],
+      })
+    : Promise.resolve(null);
+  const [lexicalResult, embeddingsResult] = await Promise.all([lexicalPromise, embeddingsPromise]);
+  const lexical = lexicalResult?.rows.map(row => ({ id: String(row.id), score: Number(row.score) })) || [];
+  if (!kind || !vector || !embeddingsResult) return lexical.slice(0, 24);
+  const similar = embeddingsResult.rows.map(row => ({ id: String(row.id), score: Number(row.score) }));
   return (kind === 'semantic' && query ? reciprocalRank([lexical, similar]) : similar).slice(0, 24);
 }

@@ -48,7 +48,7 @@ function requestedDatabase(): string {
 async function main(): Promise<void> {
   const database = requestedDatabase();
   const network = process.env.SMOKE_NETWORK === '1';
-  process.env.DATABASE_PATH = database;
+  process.env.TURSO_DATABASE_URL = `file:${database}`;
   // The default host allow-list must stay untouched for the refusal check below.
   delete process.env.IMAGE_HOSTS;
   console.log(`Base de test : ${database}`);
@@ -60,7 +60,7 @@ async function main(): Promise<void> {
   const { GET: embeddings } = await import('../app/api/embeddings/route');
   const { GET: image } = await import('../app/api/image/[id]/route');
 
-  const db = getDb();
+  const db = await getDb();
   try {
     // Deterministic rows, so the assertions do not depend on what a previous import left behind.
     const base = {
@@ -70,14 +70,14 @@ async function main(): Promise<void> {
     };
     const hosted = 'smoke-wikitimbres-avec-image';
     const bare = 'smoke-wikitimbres-sans-image';
-    importStamps(db, [
+    await importStamps(db, [
       { ...base, id: hosted, title: 'Illustration hébergée par le site',
         image_url: 'https://www.wikitimbres.fr/public/stamps/800/POSTE-1850-4.jpg' },
       { ...base, id: bare, title: 'Notice sans illustration', image_url: '' },
     ]);
 
-    const rows = db.prepare("SELECT id, image_url FROM stamps WHERE id LIKE 'smoke-wikitimbres-%' ORDER BY id")
-      .all() as { id: string; image_url: string }[];
+    const result = await db.execute("SELECT id, image_url FROM stamps WHERE id LIKE 'smoke-wikitimbres-%' ORDER BY id");
+    const rows = result.rows.map(row => ({ id: String(row.id), image_url: String(row.image_url) }));
     console.log(`Notices de vérification en base : ${rows.length}`);
     check('les deux notices de vérification sont présentes', rows.length === 2, `${rows.length}`);
     if (rows.length !== 2) throw new SmokeError('Base de test inutilisable : notices de vérification absentes.');

@@ -9,8 +9,8 @@ import { POST as search } from '../app/api/search/route';
 import { POST as embeddings } from '../app/api/embeddings/route';
 import { MODELS } from '../lib/types';
 const directory = mkdtempSync(join(tmpdir(), 'coffre-api-'));
-process.env.DATABASE_PATH = join(directory,'api.sqlite');
-afterAll(() => { getDb().close(); rmSync(directory,{ recursive:true, force:true }); });
+process.env.TURSO_DATABASE_URL = `file:${join(directory,'api.sqlite')}`;
+afterAll(async () => { (await getDb()).close(); delete process.env.TURSO_DATABASE_URL; rmSync(directory,{ recursive:true, force:true }); });
 function request(path: string, body: unknown, origin = 'http://localhost:3001') {
   return new Request(`http://0.0.0.0:3001/api/${path}`, { method:'POST', headers:{ host:'localhost:3001', origin, 'content-type':'application/json' }, body:JSON.stringify(body) });
 }
@@ -34,10 +34,11 @@ describe('Routes API', () => {
     expect(response.status).toBe(200); expect((await response.json()).items.length).toBeGreaterThan(0);
   });
   it('valide un lot complet avant toute écriture de vecteurs', async () => {
-    const before = getDb().prepare('SELECT count(*) AS n FROM embeddings').get();
+    const db = await getDb();
+    const before = Number((await db.execute('SELECT count(*) AS n FROM embeddings')).rows[0]?.n);
     const vector = Array(384).fill(.1);
     const response = await embeddings(request('embeddings',{ kind:'semantic', model:MODELS.semantic, items:[{ id:'demo-0001', vector },{ id:'absent', vector }] }));
     expect(response.status).toBe(404);
-    expect(getDb().prepare('SELECT count(*) AS n FROM embeddings').get()).toEqual(before);
+    expect(Number((await db.execute('SELECT count(*) AS n FROM embeddings')).rows[0]?.n)).toBe(before);
   });
 });

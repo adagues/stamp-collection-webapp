@@ -18,7 +18,7 @@ function smoke(env: Record<string, string | undefined> = {}) {
 
 describe('vérification bornée du parcours image', () => {
   it('refuse de tourner sans base de test explicite, sans jamais créer de fichier « undefined »', () => {
-    const result = smoke({ SMOKE_DB: undefined, DATABASE_PATH: undefined });
+    const result = smoke({ SMOKE_DB: undefined, TURSO_DATABASE_URL: undefined });
     expect(result.status).toBe(1);
     expect(result.stderr + result.stdout).toMatch(/SMOKE_DB/);
   });
