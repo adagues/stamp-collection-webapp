@@ -1,8 +1,9 @@
-import { createClient as createLibsqlClient, type Client, type Config, type InStatement } from '@libsql/client';
+import { createClient as createLibsqlClient, type Client, type Config, type InStatement, type Row } from '@libsql/client';
 import { createClient as createTursoClient } from '@tursodatabase/serverless/compat';
 import { mkdirSync } from 'node:fs';
 import { dirname, isAbsolute, resolve } from 'node:path';
 import catalog from '../data/catalog.json';
+import { stampSearchText } from './lexical';
 import { seedEmbeddings } from './seed-embeddings';
 import type { Stamp } from './types';
 
@@ -24,25 +25,22 @@ const SCHEMA: InStatement[] = [
     stamp_id TEXT REFERENCES stamps(id) ON DELETE CASCADE, kind TEXT NOT NULL,
     model TEXT NOT NULL, vector_json TEXT NOT NULL, PRIMARY KEY(stamp_id, kind, model)
   )`,
-  `CREATE VIRTUAL TABLE IF NOT EXISTS stamps_fts USING fts5(
-    title, series, description, country, content='stamps', content_rowid='rowid', tokenize='unicode61 remove_diacritics 2'
+  `CREATE TABLE IF NOT EXISTS stamp_search (
+    stamp_id TEXT PRIMARY KEY REFERENCES stamps(id) ON DELETE CASCADE,
+    search_text TEXT NOT NULL
   )`,
-  `CREATE TRIGGER IF NOT EXISTS stamps_ai AFTER INSERT ON stamps BEGIN
-    INSERT INTO stamps_fts(rowid,title,series,description,country) VALUES(new.rowid,new.title,new.series,new.description,new.country);
-  END`,
-  `CREATE TRIGGER IF NOT EXISTS stamps_ad AFTER DELETE ON stamps BEGIN
-    INSERT INTO stamps_fts(stamps_fts,rowid,title,series,description,country) VALUES('delete',old.rowid,old.title,old.series,old.description,old.country);
-  END`,
-  `CREATE TRIGGER IF NOT EXISTS stamps_au AFTER UPDATE ON stamps BEGIN
-    INSERT INTO stamps_fts(stamps_fts,rowid,title,series,description,country) VALUES('delete',old.rowid,old.title,old.series,old.description,old.country);
-    INSERT INTO stamps_fts(rowid,title,series,description,country) VALUES(new.rowid,new.title,new.series,new.description,new.country);
-  END`,
   `CREATE TABLE IF NOT EXISTS app_metadata (
     key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
   )`,
-  `INSERT INTO app_metadata(key, value) VALUES('schema_version', '1')
-    ON CONFLICT(key) DO NOTHING`,
+  // Previous libSQL releases used FTS5 triggers. The Rust MVCC engine does not support
+  // virtual tables, so remove the triggers and leave any legacy virtual table unused.
+  'DROP TRIGGER IF EXISTS stamps_ai',
+  'DROP TRIGGER IF EXISTS stamps_ad',
+  'DROP TRIGGER IF EXISTS stamps_au',
 ];
+
+const SEARCH_UPSERT = `INSERT INTO stamp_search(stamp_id, search_text) VALUES(?, ?)
+  ON CONFLICT(stamp_id) DO UPDATE SET search_text=excluded.search_text`;
 
 function normalizeLocation(location: string) {
   if (location === ':memory:') return 'file::memory:';
@@ -60,17 +58,46 @@ function normalizeLocation(location: string) {
   return `file:${filename}`;
 }
 
+function searchStatement(stamp: { id: string; title: string; series: string; description: string; country: string }): InStatement {
+  return { sql: SEARCH_UPSERT, args: [stamp.id, stampSearchText(stamp)] };
+}
+
+function stampFromSearchRow(row: Row) {
+  return {
+    id: String(row.id), title: String(row.title), series: String(row.series),
+    description: String(row.description), country: String(row.country),
+  };
+}
+
+async function migrateSearchIndex(db: Client) {
+  const transaction = await db.transaction('write');
+  try {
+    const version = await transaction.execute({ sql: 'SELECT value FROM app_metadata WHERE key = ?', args: ['schema_version'] });
+    if (String(version.rows[0]?.value || '') !== '2') {
+      const existing = await transaction.execute('SELECT id, title, series, description, country FROM stamps ORDER BY id');
+      for (let offset = 0; offset < existing.rows.length; offset += 100) {
+        await transaction.batch(existing.rows.slice(offset, offset + 100).map(row => searchStatement(stampFromSearchRow(row))));
+      }
+      await transaction.execute(`INSERT INTO app_metadata(key, value, updated_at) VALUES('schema_version', '2', CURRENT_TIMESTAMP)
+        ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=CURRENT_TIMESTAMP`);
+    }
+    await transaction.commit();
+  } catch (error) {
+    try { await transaction.rollback(); } catch { /* the original migration error is more useful */ }
+    throw error;
+  }
+}
+
 export async function createDatabase(location: string, authToken?: string): Promise<Client> {
   const url = normalizeLocation(location);
   const config: Config = authToken ? { url, authToken } : { url };
-  // New Turso databases use the turso:// protocol and the fetch-only serverless driver.
-  // Existing libSQL databases and local file: databases keep the libSQL client.
   const db = url.startsWith('turso://')
     ? createTursoClient(config) as unknown as Client
     : createLibsqlClient(config);
   try {
     if (url.startsWith('file:')) await db.execute('PRAGMA busy_timeout = 5000');
     await db.batch(SCHEMA, 'write');
+    await migrateSearchIndex(db);
     return db;
   } catch (error) {
     db.close();
@@ -87,6 +114,7 @@ export async function importStamps(db: Client, stamps: Stamp[]): Promise<void> {
   const statements: InStatement[] = [];
   for (const stamp of stamps) {
     statements.push({ sql: UPSERT_STAMP, args: STAMP_FIELDS.map(field => stamp[field]) });
+    statements.push(searchStatement(stamp));
     statements.push({ sql: 'DELETE FROM embeddings WHERE stamp_id = ?', args: [stamp.id] });
   }
   await db.batch(statements, 'write');
@@ -98,6 +126,9 @@ async function bootstrapCatalog(db: Client): Promise<boolean> {
     SELECT ${STAMP_FIELDS.map(() => '?').join(',')} WHERE NOT EXISTS
       (SELECT 1 FROM app_metadata WHERE key = ?)
     ON CONFLICT(id) DO UPDATE SET ${STAMP_FIELDS.slice(1).map(field => `${field}=excluded.${field}`).join(',')}`;
+  const conditionalSearch = `INSERT INTO stamp_search(stamp_id, search_text)
+    SELECT ?, ? WHERE NOT EXISTS (SELECT 1 FROM app_metadata WHERE key = ?)
+    ON CONFLICT(stamp_id) DO UPDATE SET search_text=excluded.search_text`;
   const statements: InStatement[] = [{
     sql: `INSERT INTO app_metadata(key, value) SELECT ?, 'existing'
       WHERE EXISTS (SELECT 1 FROM stamps) ON CONFLICT(key) DO NOTHING`,
@@ -107,6 +138,10 @@ async function bootstrapCatalog(db: Client): Promise<boolean> {
     statements.push({
       sql: conditionalUpsert,
       args: [...STAMP_FIELDS.map(field => stamp[field]), CATALOG_BOOTSTRAP_KEY],
+    });
+    statements.push({
+      sql: conditionalSearch,
+      args: [stamp.id, stampSearchText(stamp), CATALOG_BOOTSTRAP_KEY],
     });
     statements.push({
       sql: `DELETE FROM embeddings WHERE stamp_id = ? AND NOT EXISTS

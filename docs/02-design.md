@@ -13,7 +13,7 @@ flowchart LR
   N --> A[Routes API]
   V --> A
   S --> A
-  A --> D[(Turso / libSQL distant et index FTS5)]
+  A --> D[(Turso / SQLite distant et index lexical portable)]
   I[Import CSV sourcé] --> D
   P[Préparation des images du catalogue] --> M
 ```
@@ -21,6 +21,7 @@ flowchart LR
 ```mermaid
 erDiagram
   Stamp ||--o| CollectionEntry : "appartient à"
+  Stamp ||--o| StampSearch : "est indexé par"
   Stamp ||--o{ Embedding : "possède"
   Stamp {
     string id PK
@@ -40,6 +41,10 @@ erDiagram
     int quantity
     string personal_reference
     string updated_at
+  }
+  StampSearch {
+    string stamp_id PK,FK
+    string search_text
   }
   Embedding {
     string stamp_id PK,FK

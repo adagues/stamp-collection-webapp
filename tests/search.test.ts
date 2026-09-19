@@ -1,6 +1,7 @@
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { createDatabase, importStamps } from '../lib/database';
-import { cosine, lexicalQuery, reciprocalRank, searchStamps, validateVector } from '../lib/search';
+import { cosine, reciprocalRank, searchStamps, validateVector } from '../lib/search';
+import { lexicalTokens } from '../lib/lexical';
 import { MODELS } from '../lib/types';
 import catalog from '../data/catalog.json';
 const db = await createDatabase(':memory:');
@@ -15,12 +16,12 @@ describe('Classement et recherche', () => {
     expect(cosine([0,0],[1,2])).toBe(0);
     expect(cosine([1],[1,2])).toBe(0);
   });
-  it('neutralise la syntaxe FTS fournie par une saisie libre', async () => {
-    expect(lexicalQuery('" OR (cérès*) -bleu')).toBe('"OR"* OR "cérès"* OR "bleu"*');
+  it('normalise une saisie libre sans interpréter sa syntaxe', async () => {
+    expect(lexicalTokens('" OR (cérès*) -bleu')).toEqual(['or', 'ceres', 'bleu']);
     await expect(searchStamps(db, '" OR (cérès*) -bleu')).resolves.toBeDefined();
     expect(await searchStamps(db, 'phares')).toHaveLength(3);
     expect(await searchStamps(db, '!!!')).toEqual([]);
-    expect(lexicalQuery('des timbres de montagne')).toBe('"timbres"* OR "montagne"*');
+    expect(lexicalTokens('des timbres de montagne')).toEqual(['timbres', 'montagne']);
   });
   it('fusionne les rangs plutôt que des scores incomparables', () => {
     const result = reciprocalRank([[{ id:'a',score:100 },{ id:'b',score:5 }],[{ id:'b',score:.9 },{ id:'c',score:.8 }]]);

@@ -34,7 +34,7 @@ npm test
 - Les statistiques distinguent les notices et les exemplaires. Les valeurs inconnues sont exclues du total ; aucune cote n’a été inventée.
 - **Identifier un timbre** : importer une image JPEG, PNG ou WebP de moins de 10 Mo, ou utiliser la caméra. Un cadrage serré, de face et bien éclairé améliore les résultats.
 - La caméra nécessite une autorisation du navigateur et une connexion HTTPS ou `localhost`.
-- **Rechercher par le sens** : saisir une idée, par exemple « paysages de montagne ». Les rangs de similarité MiniLM sont fusionnés avec ceux de l’index lexical FTS5.
+- **Rechercher par le sens** : saisir une idée, par exemple « paysages de montagne ». Les rangs de similarité MiniLM sont fusionnés avec ceux de l’index lexical portable.
 - La recherche par mots fonctionne sans modèle. Si un modèle échoue, le catalogue manuel reste disponible ; la recherche sémantique peut se rabattre sur les mots-clés.
 
 ## Préparer les modèles

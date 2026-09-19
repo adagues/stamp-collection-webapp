@@ -20,7 +20,7 @@ TURSO_DATABASE_URL=turso://nom-base-organisation.turso.io
 TURSO_AUTH_TOKEN=jeton-prive
 ```
 
-Sur Vercel, définir ces variables pour l’environnement Production, puis redéployer. Ne jamais les préfixer par `NEXT_PUBLIC_` ni envoyer `.env.local` dans Git. Au premier accès, l’application crée de façon idempotente les tables, l’index FTS5 et ses triggers. Si la table `stamps` est vide, elle amorce le catalogue fictif distribué ; elle ne remplace pas une base déjà peuplée.
+Sur Vercel, définir ces variables pour l’environnement Production, puis redéployer. Ne jamais les préfixer par `NEXT_PUBLIC_` ni envoyer `.env.local` dans Git. Au premier accès, l’application crée de façon idempotente les tables et l’index lexical portable. Le moteur Rust/MVCC de Turso ne prenant pas en charge les tables virtuelles, cette recherche n’utilise pas FTS5. Si la table `stamps` est vide, l’application amorce le catalogue fictif distribué ; elle ne remplace pas une base déjà peuplée.
 
 Le [guide officiel des pilotes TypeScript Turso](https://docs.turso.tech/sdk/ts/reference) distingue le pilote serverless des nouvelles bases `turso://` et le client libSQL des bases `libsql://`.
 
@@ -51,7 +51,7 @@ Avec `TURSO_DATABASE_URL=file:data/vault.sqlite`, les tests et le développement
    ```
 
 4. Relever dans la sortie le nom attribué à la base importée, récupérer son URL et créer un nouveau jeton avec `turso db show --url <nom>` et `turso db tokens create <nom>`.
-5. Définir les variables serveur, redéployer, puis vérifier les nombres de notices, d’entrées de collection et de vecteurs, une recherche FTS5 et une écriture de collection avant d’abandonner la sauvegarde locale.
+5. Définir les variables serveur, redéployer, puis vérifier les nombres de notices, d’entrées de collection et de vecteurs, une recherche lexicale et une écriture de collection avant d’abandonner la sauvegarde locale.
 
 L’[import officiel d’une base SQLite](https://docs.turso.tech/cloud/migrate-to-turso) documente aussi le chemin de migration et les prérequis du fichier source.
 
@@ -60,7 +60,9 @@ L’[import officiel d’une base SQLite](https://docs.turso.tech/cloud/migrate-
 - `npm run seed` vérifie la connexion et initialise seulement une base vide ; la collection existante est conservée.
 - `npm run import:catalog -- chemin/catalogue.csv` écrit dans la base configurée et invalide les vecteurs des notices modifiées.
 - `npm run export:embeddings` lit la base configurée, mais écrit toujours un artefact local exclu de Git.
-- Les écritures de catalogue et les lots de vecteurs utilisent des batches transactionnels libSQL.
+- Les écritures de catalogue et les lots de vecteurs utilisent des batches transactionnels. La migration de schéma 2 reconstruit `stamp_search` dans une transaction d’écriture avant de publier sa version ; éviter néanmoins tout import pendant un redéploiement de migration.
+- Une ancienne table virtuelle FTS5 peut rester stockée après import d’un fichier libSQL historique, mais ses triggers sont retirés et l’application ne la consulte plus.
+- La recherche de préfixes parcourt la table lexicale ordinaire. Elle vise le catalogue personnel actuel de quelques centaines de notices ; mesurer ou remplacer cette stratégie avant un catalogue de grande taille.
 - La base distante ne remplace pas le contrôle d’accès à l’application. Tant que l’application ne possède pas sa propre authentification, conserver la protection privée de l’hébergeur.
 
 Contenu Turso reformulé à partir de la documentation officielle afin de respecter les restrictions de licence.

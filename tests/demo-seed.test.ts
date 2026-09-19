@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { createDatabase, importStamps } from '../lib/database';
+import { searchStamps } from '../lib/search';
 import { seedEmbeddings } from '../lib/seed-embeddings';
 import catalog from '../data/catalog.json';
 
@@ -21,8 +22,8 @@ describe('démonstration sans vecteurs publiés ni réseau implicite', () => {
     await seedEmbeddings(db);
     expect(Number((await db.execute('SELECT count(*) AS n FROM stamps')).rows[0]?.n)).toBe(catalog.length);
     expect(Number((await db.execute('SELECT count(*) AS n FROM embeddings')).rows[0]?.n)).toBe(0);
-    const found = await db.execute("SELECT s.id FROM stamps_fts JOIN stamps s ON s.rowid=stamps_fts.rowid WHERE stamps_fts MATCH 'phare'");
-    expect(found.rows.length).toBeGreaterThan(0);
+    const found = await searchStamps(db, 'phare');
+    expect(found.length).toBeGreaterThan(0);
     db.close();
   });
 
