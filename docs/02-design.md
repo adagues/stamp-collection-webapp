@@ -1,7 +1,7 @@
 # Conception
 
 - Application personnelle : un serveur, une collection, sans comptes utilisateurs.
-- SQLite conserve les notices, les quantités et les vecteurs liés à la version des modèles.
+- Turso/libSQL conserve à distance les notices, les quantités et les vecteurs liés à la version des modèles ; une URL `file:` garde le développement local hors réseau.
 - Les photos restent dans le navigateur ; seuls les vecteurs sont transmis à la recherche.
 
 ```mermaid
@@ -13,7 +13,7 @@ flowchart LR
   N --> A[Routes API]
   V --> A
   S --> A
-  A --> D[(Base SQLite et index FTS5)]
+  A --> D[(Turso / libSQL distant et index FTS5)]
   I[Import CSV sourcé] --> D
   P[Préparation des images du catalogue] --> M
 ```

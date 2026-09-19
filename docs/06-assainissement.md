@@ -15,12 +15,12 @@ Le jeu fictif n'est pas utilisable pour identifier de vrais timbres. L'applicati
 
 ## Validation et protection
 
-Les validations complètes et empreintes de contrôle sont consignées dans le bilan de l'assainissement, hors dépôt. Les tests de données travaillent exclusivement sur des bases temporaires/en mémoire. Pour un build ou un essai manuel, définir `DATABASE_PATH` vers une **nouvelle base temporaire**, jamais vers la collection personnelle.
+Les validations complètes et empreintes de contrôle sont consignées dans le bilan de l'assainissement, hors dépôt. Les tests de données travaillent exclusivement sur des bases libSQL locales temporaires/en mémoire. Pour un build ou un essai manuel isolé, définir `TURSO_DATABASE_URL=file:/chemin/vers/une-nouvelle-base.sqlite`, jamais l’URL de la collection personnelle distante.
 
 Les tests de non-régression couvrent notamment : la distribution synthétique, l'initialisation sans écrasement d'une base existante, la conservation de la collection, le parcours d'import, le parseur, le relais sans cache partagé et les exclusions Git. L'exécution de ces tests ne constitue pas une validation juridique des futures données importées.
 
 ## Limites résiduelles
 
 - Le retrait de l'arbre courant n'efface pas les anciennes révisions, copies distantes ou caches déjà constitués. L'historique reste un arbitrage séparé.
-- Aucun feu vert n'est donné pour la collecte exhaustive, la diffusion de données tierces, le déploiement public ou la migration de stockage.
+- Aucun feu vert juridique n'est donné pour la collecte exhaustive, la diffusion de données tierces ou le déploiement public. La migration technique ultérieure vers Turso/libSQL ne modifie ni les droits sur les contenus ni cette limite.
 - Les dépendances et modèles gardent leurs licences et limites. Les vulnérabilités du socle, signalées lors de la livraison initiale, ne sont pas corrigées par cet assainissement.

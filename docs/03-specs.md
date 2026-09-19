@@ -1,9 +1,9 @@
 # Spécifications techniques
 
-- Socle : Next.js 14, App Router, TypeScript, Tailwind CSS et SQLite avec better-sqlite3.
-- Recherche visuelle : TensorFlow.js, MobileNet v2, vecteurs normalisés, similarité cosinus et meilleurs candidats.
+- Socle : Next.js 14, App Router, TypeScript, Tailwind CSS et Turso/libSQL avec `@libsql/client`.
+- Recherche visuelle : TensorFlow.js, MobileNet v2, vecteurs normalisés, similarité cosinus calculée par les fonctions vectorielles libSQL et meilleurs candidats.
 - Recherche sémantique : @xenova/transformers, modèle multilingue MiniLM compact, moyenne des représentations et normalisation.
-- Recherche lexicale : SQLite FTS5 ; fusion des rangs lexicaux et sémantiques.
+- Recherche lexicale : index FTS5 libSQL maintenu par triggers ; fusion des rangs lexicaux et sémantiques.
 - Calcul des modèles dans le navigateur ; préparation persistante des vecteurs du catalogue depuis la page de recherche.
 - Stamp : id, title, country, year, series, denomination, description, image_url, image_credit, source_url, catalog_number nullable, estimated_value nullable, currency.
 - CollectionEntry : stamp_id, owned, quantity (entier de 0 à 9999), personal_reference (500 caractères maximum), updated_at.
@@ -23,7 +23,7 @@
 - /search → recherche par texte, sens, photo ou caméra, préparation des modèles et du catalogue.
 - Catalogue initial : 150 à 300 notices françaises sourcées ; aucun numéro de catalogue sans vérification.
 - Import : CSV documenté dans data/import/, script scripts/import-catalog.ts et reconstruction déterministe de la base.
-- Tests : Vitest pour le classement des recherches et les opérations de collection SQLite.
+- Tests : Vitest pour le classement des recherches et les opérations de collection libSQL sur des bases locales temporaires.
 - Intégration continue : npm install, npm run build puis npm test à chaque envoi.
-- Exécution : npm install puis npm run dev ; initialisation automatique de la base si nécessaire.
+- Exécution : `npm install` puis `npm run dev` ; connexion distante par `TURSO_DATABASE_URL` et `TURSO_AUTH_TOKEN`, ou base locale par URL `file:` ; initialisation automatique du schéma si nécessaire.
 - Limites : ressemblance approximative, téléchargement initial des modèles, couverture variable des images, aucun service d’expertise.

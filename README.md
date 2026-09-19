@@ -14,10 +14,11 @@ Prérequis : Node.js 22 LTS à jour (22.12 minimum), ou Node.js 24 ou ultérieur
 
 ```bash
 npm install
+cp .env.example .env.local
 npm run dev
 ```
 
-Ouvrir `http://localhost:3000`. Si ce port est occupé, Next.js annonce le port suivant disponible. La base `data/vault.sqlite` est créée automatiquement à partir du catalogue de démonstration **uniquement si elle est vide** : une base existante n'est jamais réinitialisée ni écrasée, et sa collection est conservée. Aucun compte n’est nécessaire.
+Ouvrir `http://localhost:3000`. Si ce port est occupé, Next.js annonce le port suivant disponible. Par défaut, `.env.example` utilise `TURSO_DATABASE_URL=file:data/vault.sqlite` : la base locale est créée automatiquement à partir du catalogue de démonstration **uniquement si elle est vide**. Une base existante n'est jamais réinitialisée ni écrasée, et sa collection est conservée. Aucun compte n’est nécessaire.
 
 ```bash
 npm run build
@@ -38,14 +39,14 @@ npm test
 
 ## Préparer les modèles
 
-- Aucun vecteur précalculé n’est distribué (`data/embeddings.json` est vide). Les vecteurs déjà présents dans une base locale sont conservés. Ce choix de distribution n’est pas une obligation juridique générale de supprimer les empreintes.
-- La page de recherche indique combien d’images et de textes sont prêts. Les boutons **Préparer les images** et **Préparer les textes** calculent les vecteurs manquants dans le navigateur et les enregistrent dans SQLite.
+- Aucun vecteur précalculé n’est distribué (`data/embeddings.json` est vide). Les vecteurs déjà présents dans la base configurée sont conservés. Ce choix de distribution n’est pas une obligation juridique générale de supprimer les empreintes.
+- La page de recherche indique combien d’images et de textes sont prêts. Les boutons **Préparer les images** et **Préparer les textes** calculent les vecteurs manquants dans le navigateur et les enregistrent dans Turso/libSQL.
 - Les modèles sont MobileNet v2, avec 1 280 composantes, et `Xenova/paraphrase-multilingual-MiniLM-L12-v2`, quantifié, avec 384 composantes et moyenne normalisée.
 - Le téléchargement initial peut prendre plusieurs minutes ; MiniLM multilingue est plus volumineux qu’un modèle uniquement anglophone. La préparation peut être arrêtée et reprise.
 - Après une préparation complète, `npm run export:embeddings` écrit un export **local** dans `data/exports/embeddings.json`, exclu de Git, sans remplacer le fichier de démonstration. Cet export exclut les références personnelles ; cela ne suffit pas à autoriser sa publication.
 - Une image indisponible est signalée dans le bilan et peut être réessayée. Les recherches ne portent que sur les vecteurs disponibles pour la version du modèle sélectionnée.
-- Les photos restent dans le navigateur. Seuls leurs vecteurs numériques sont transmis au serveur local ; les téléchargements de modèles contactent leurs hébergeurs externes.
-- La recherche visuelle compare les vecteurs par similarité cosinus et affiche jusqu’à 24 candidats. Ces rangs ne sont pas des probabilités d’identification.
+- Les photos restent dans le navigateur. Seuls leurs vecteurs numériques sont transmis aux routes serveur de l’application ; les téléchargements de modèles contactent leurs hébergeurs externes.
+- La recherche visuelle compare les vecteurs avec `vector_distance_cos` dans libSQL et ne retransfère que les meilleurs candidats à l’application. Ces rangs ne sont pas des probabilités d’identification.
 
 ## Données, import et sauvegarde
 
@@ -53,9 +54,11 @@ npm test
 - Les valeurs faciales sont historiques et ne constituent pas une estimation de collection. La base initiale ne contient aucune valeur estimée.
 - Pour ajouter d’autres pays : consulter [le schéma CSV](data/import/README.md), puis exécuter `npm run import:catalog -- chemin/catalogue.csv`.
 - Un import met à jour les identifiants existants sans effacer leur collection, et invalide leurs vecteurs. Relancer ensuite la préparation.
-- `npm run seed` initialise une base vide de façon déterministe, sans supprimer une base existante.
-- Pour sauvegarder, arrêter l’application puis copier `data/vault.sqlite` et, s’ils existent, ses fichiers `-wal` et `-shm`. La base et les références personnelles sont exclues de Git.
-- `DATABASE_PATH` permet de choisir l’emplacement de la base. `IMAGE_HOSTS` ajoute des noms d’hôtes HTTPS autorisés techniquement, séparés par des virgules. Le relais télécharge et retransmet les images (ce n’est pas un simple lien), avec `Cache-Control: private, no-store` ; vérifier les droits avant activation.
+- `npm run seed` vérifie la connexion et initialise une base vide de façon déterministe, sans supprimer une base existante.
+- En production, `TURSO_DATABASE_URL` est obligatoire : l’application échoue explicitement au lieu de créer un fichier éphémère chez l’hébergeur. Une URL `libsql://` nécessite aussi `TURSO_AUTH_TOKEN`.
+- La sauvegarde, la restauration et la rétention de la base distante se gèrent côté Turso. Conserver une sauvegarde SQLite séparée avant toute migration d’une collection existante.
+- `IMAGE_HOSTS` ajoute des noms d’hôtes HTTPS autorisés techniquement, séparés par des virgules. Le relais télécharge et retransmet les images (ce n’est pas un simple lien), avec `Cache-Control: private, no-store` ; vérifier les droits avant activation.
+- Voir [la configuration et la migration Turso](docs/07-turso.md), ainsi que le [guide officiel Next.js + Turso](https://docs.turso.tech/sdk/ts/guides/nextjs).
 
 ## Collecte de métadonnées Wikitimbres
 
@@ -64,8 +67,8 @@ npm test
 
 ## Structure et validation
 
-- [Intention](docs/01-intent.md), [conception et diagrammes](docs/02-design.md), [spécifications](docs/03-specs.md).
-- `app/` : pages et routes API Next.js 14 ; `components/` : interface française ; `lib/` : SQLite, collection, classement et modèles.
+- [Intention](docs/01-intent.md), [conception et diagrammes](docs/02-design.md), [spécifications](docs/03-specs.md), [configuration Turso](docs/07-turso.md).
+- `app/` : pages et routes API Next.js 14 ; `components/` : interface française ; `lib/` : client Turso/libSQL, collection, classement et modèles.
 - `data/catalog.json` : catalogue de démonstration fictif ; `data/embeddings.json` : vide ; `scripts/` : initialisation et import ; `tests/` : tests Vitest de classement, validation, API, persistance et périmètre de publication.
 - Le workflow `.github/workflows/ci.yml` prévoit `npm install`, `npm run build` et `npm test` à chaque envoi et demande de fusion.
 

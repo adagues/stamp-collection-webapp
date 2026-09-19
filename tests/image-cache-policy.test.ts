@@ -1,7 +1,7 @@
 import { afterEach, expect, it, vi } from 'vitest';
 
 vi.mock('@/lib/catalog', () => ({
-  getStamp: () => ({ image_url: 'https://www.phil-ouest.com/test-synthetic.jpg' }),
+  getStamp: async () => ({ image_url: 'https://www.phil-ouest.com/test-synthetic.jpg' }),
 }));
 import { GET } from '@/app/api/image/[id]/route';
 

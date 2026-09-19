@@ -22,7 +22,7 @@ describe('export local des empreintes', () => {
     const before = readFileSync(distributed, 'utf8');
     const result = execFileSync(process.execPath, ['--import', 'tsx', 'scripts/export-embeddings.ts'], {
       cwd: process.cwd(), encoding: 'utf8',
-      env: { ...process.env, DATABASE_PATH: join(directory, 'export.sqlite'), EMBEDDINGS_OUTPUT: output },
+      env: { ...process.env, TURSO_DATABASE_URL: `file:${join(directory, 'export.sqlite')}`, EMBEDDINGS_OUTPUT: output },
     });
     expect(result).toMatch(/embeddings\.json/);
     expect(readFileSync(distributed, 'utf8')).toBe(before);

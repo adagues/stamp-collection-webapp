@@ -5,7 +5,7 @@ import type { Stamp } from '../lib/types';
 class ImportError extends Error {}
 const fields = ['id','title','country','year','series','denomination','description','image_url','image_credit','source_url','catalog_number','estimated_value','currency'];
 function https(value: string) { try { return new URL(value).protocol === 'https:'; } catch { return false; } }
-try {
+async function main() {
   const path = process.argv[2];
   if (!path) throw new ImportError('Indiquez le chemin du fichier CSV à importer.');
   const rows = parse(readFileSync(path, 'utf8'), { columns: true, bom: true, skip_empty_lines: true, trim: true }) as Record<string,string>[];
@@ -22,9 +22,14 @@ try {
       description: row.description, image_url: row.image_url, image_credit: row.image_credit, source_url: row.source_url,
       catalog_number: row.catalog_number || null, estimated_value: value, currency: row.currency };
   });
-  importStamps(getDb(), stamps);
-  console.log(`${stamps.length} notices importées. Préparez à nouveau leurs vecteurs depuis la recherche.`);
-} catch (error) {
+  const db = await getDb();
+  try {
+    await importStamps(db, stamps);
+    console.log(`${stamps.length} notices importées. Préparez à nouveau leurs vecteurs depuis la recherche.`);
+  } finally { db.close(); }
+}
+
+main().catch(error => {
   console.error(error instanceof ImportError ? error.message : 'Impossible d’importer le catalogue. Vérifiez le chemin, le format CSV et l’accès à la base.');
   process.exitCode = 1;
-}
+});

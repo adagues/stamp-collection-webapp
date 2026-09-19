@@ -15,14 +15,14 @@ describe('démonstration sans vecteurs publiés ni réseau implicite', () => {
     expect(seedFile).toEqual([]);
   });
 
-  it('initialise une base complète et interrogeable malgré l’absence de vecteurs', () => {
-    const db = createDatabase(':memory:');
-    importStamps(db, catalog);
-    seedEmbeddings(db);
-    expect((db.prepare('SELECT count(*) AS n FROM stamps').get() as { n: number }).n).toBe(catalog.length);
-    expect((db.prepare('SELECT count(*) AS n FROM embeddings').get() as { n: number }).n).toBe(0);
-    const found = db.prepare("SELECT s.id FROM stamps_fts JOIN stamps s ON s.rowid=stamps_fts.rowid WHERE stamps_fts MATCH 'phare'").all();
-    expect(found.length).toBeGreaterThan(0);
+  it('initialise une base complète et interrogeable malgré l’absence de vecteurs', async () => {
+    const db = await createDatabase(':memory:');
+    await importStamps(db, catalog);
+    await seedEmbeddings(db);
+    expect(Number((await db.execute('SELECT count(*) AS n FROM stamps')).rows[0]?.n)).toBe(catalog.length);
+    expect(Number((await db.execute('SELECT count(*) AS n FROM embeddings')).rows[0]?.n)).toBe(0);
+    const found = await db.execute("SELECT s.id FROM stamps_fts JOIN stamps s ON s.rowid=stamps_fts.rowid WHERE stamps_fts MATCH 'phare'");
+    expect(found.rows.length).toBeGreaterThan(0);
     db.close();
   });
 
@@ -34,9 +34,9 @@ describe('démonstration sans vecteurs publiés ni réseau implicite', () => {
       throw new Error('Aucune requête réseau ne doit partir du démarrage.');
     }) as typeof fetch;
     try {
-      const db = createDatabase(':memory:');
-      importStamps(db, catalog);
-      seedEmbeddings(db);
+      const db = await createDatabase(':memory:');
+      await importStamps(db, catalog);
+      await seedEmbeddings(db);
       db.close();
     } finally { globalThis.fetch = original; }
     expect(calls).toEqual([]);

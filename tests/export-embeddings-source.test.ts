@@ -33,21 +33,21 @@ function exported(directory: string, database: string) {
   const output = join(directory, 'embeddings-local.json');
   const result = execFileSync(process.execPath, ['--import', 'tsx', 'scripts/export-embeddings.ts'], {
     cwd: process.cwd(), encoding: 'utf8',
-    env: { ...process.env, DATABASE_PATH: database, EMBEDDINGS_OUTPUT: output },
+    env: { ...process.env, TURSO_DATABASE_URL: `file:${database}`, EMBEDDINGS_OUTPUT: output },
   });
   return { output, result };
 }
 
 describe('export des empreintes depuis la base locale', () => {
-  it('exporte les vecteurs des notices présentes en base, même absentes du catalogue livré', () => {
+  it('exporte les vecteurs des notices présentes en base, même absentes du catalogue livré', async () => {
     const directory = workspace();
     const database = join(directory, 'export.sqlite');
-    const db = createDatabase(database);
-    importStamps(db, [local]);
-    const insert = db.prepare('INSERT INTO embeddings(stamp_id,kind,model,vector_json) VALUES(?,?,?,?)');
-    for (const kind of ['visual', 'semantic'] as const) {
-      insert.run(local.id, kind, MODELS[kind], JSON.stringify(vector(kind)));
-    }
+    const db = await createDatabase(database);
+    await importStamps(db, [local]);
+    await db.batch((['visual', 'semantic'] as const).map(kind => ({
+      sql:'INSERT INTO embeddings(stamp_id,kind,model,vector_json) VALUES(?,?,?,?)',
+      args:[local.id, kind, MODELS[kind], JSON.stringify(vector(kind))],
+    })), 'write');
     db.close();
 
     const { output, result } = exported(directory, database);
@@ -63,11 +63,11 @@ describe('export des empreintes depuis la base locale', () => {
     expect(result).toMatch(/embeddings-local\.json/);
   });
 
-  it('n’exporte rien et ne prétend rien quand la base locale ne contient aucun vecteur', () => {
+  it('n’exporte rien et ne prétend rien quand la base locale ne contient aucun vecteur', async () => {
     const directory = workspace();
     const database = join(directory, 'vide.sqlite');
-    const db = createDatabase(database);
-    importStamps(db, [local]);
+    const db = await createDatabase(database);
+    await importStamps(db, [local]);
     db.close();
 
     const { output } = exported(directory, database);

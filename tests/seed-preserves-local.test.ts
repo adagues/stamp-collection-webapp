@@ -32,46 +32,43 @@ const seedRow = (kind: EmbeddingKind, value: number): SeedRow => ({
 });
 
 describe('amorçage non destructif sur une base existante', () => {
-  it('conserve un vecteur déjà calculé localement au lieu de le remplacer par celui livré', () => {
-    const db = database();
-    importStamps(db, [stamp]);
+  it('conserve un vecteur déjà calculé localement au lieu de le remplacer par celui livré', async () => {
+    const db = await database();
+    await importStamps(db, [stamp]);
     const mine = filled('semantic', 0.25);
-    db.prepare('INSERT INTO embeddings(stamp_id,kind,model,vector_json) VALUES(?,?,?,?)')
-      .run(stamp.id, 'semantic', MODELS.semantic, JSON.stringify(mine));
+    await db.execute({ sql:'INSERT INTO embeddings(stamp_id,kind,model,vector_json) VALUES(?,?,?,?)', args:[stamp.id, 'semantic', MODELS.semantic, JSON.stringify(mine)] });
 
-    seedEmbeddings(db, [seedRow('semantic', 0.75)]);
+    await seedEmbeddings(db, [seedRow('semantic', 0.75)]);
 
-    const kept = db.prepare('SELECT vector_json FROM embeddings WHERE stamp_id=? AND kind=?')
-      .get(stamp.id, 'semantic') as { vector_json: string };
-    expect(JSON.parse(kept.vector_json)).toEqual(mine);
-    expect(db.prepare('SELECT count(*) AS n FROM embeddings').get()).toEqual({ n: 1 });
+    const kept = (await db.execute({ sql:'SELECT vector_json FROM embeddings WHERE stamp_id=? AND kind=?', args:[stamp.id, 'semantic'] })).rows[0];
+    expect(JSON.parse(String(kept?.vector_json))).toEqual(mine);
+    expect(Number((await db.execute('SELECT count(*) AS n FROM embeddings')).rows[0]?.n)).toBe(1);
     db.close();
   });
 
-  it('ne modifie ni la collection de l’utilisateur ni ses notices en amorçant les vecteurs', () => {
-    const db = database();
-    importStamps(db, [stamp]);
-    db.prepare('INSERT INTO collection_entries(stamp_id,owned,quantity,personal_reference) VALUES(?,1,4,?)')
-      .run(stamp.id, 'Classeur bleu · page 7');
-    const collectionBefore = db.prepare('SELECT * FROM collection_entries').all();
-    const stampsBefore = db.prepare('SELECT * FROM stamps ORDER BY id').all();
+  it('ne modifie ni la collection de l’utilisateur ni ses notices en amorçant les vecteurs', async () => {
+    const db = await database();
+    await importStamps(db, [stamp]);
+    await db.execute({ sql:'INSERT INTO collection_entries(stamp_id,owned,quantity,personal_reference) VALUES(?,1,4,?)', args:[stamp.id, 'Classeur bleu · page 7'] });
+    const collectionBefore = (await db.execute('SELECT * FROM collection_entries')).rows;
+    const stampsBefore = (await db.execute('SELECT * FROM stamps ORDER BY id')).rows;
 
-    seedEmbeddings(db, [seedRow('visual', 0.5), seedRow('semantic', 0.5)]);
+    await seedEmbeddings(db, [seedRow('visual', 0.5), seedRow('semantic', 0.5)]);
 
-    expect(db.prepare('SELECT * FROM collection_entries').all()).toEqual(collectionBefore);
-    expect(db.prepare('SELECT * FROM stamps ORDER BY id').all()).toEqual(stampsBefore);
-    expect(db.prepare('SELECT count(*) AS n FROM embeddings').get()).toEqual({ n: 2 });
+    expect((await db.execute('SELECT * FROM collection_entries')).rows).toEqual(collectionBefore);
+    expect((await db.execute('SELECT * FROM stamps ORDER BY id')).rows).toEqual(stampsBefore);
+    expect(Number((await db.execute('SELECT count(*) AS n FROM embeddings')).rows[0]?.n)).toBe(2);
     db.close();
   });
 
-  it('n’ajoute aucun vecteur pour une notice absente de la base locale', () => {
-    const db = database();
-    importStamps(db, [stamp]);
+  it('n’ajoute aucun vecteur pour une notice absente de la base locale', async () => {
+    const db = await database();
+    await importStamps(db, [stamp]);
     const foreign: SeedRow = { ...seedRow('visual', 0.5), stamp_id: 'notice-absente' };
 
-    seedEmbeddings(db, [foreign]);
+    await seedEmbeddings(db, [foreign]);
 
-    expect(db.prepare('SELECT count(*) AS n FROM embeddings').get()).toEqual({ n: 0 });
+    expect(Number((await db.execute('SELECT count(*) AS n FROM embeddings')).rows[0]?.n)).toBe(0);
     db.close();
   });
 });

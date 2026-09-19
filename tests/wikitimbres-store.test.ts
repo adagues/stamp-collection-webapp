@@ -32,7 +32,7 @@ it('reprend sans doublons, reconstruit le CSV et accepte l’import existant', a
   await next.save(1, { ...row, denomination: '20 F' });
   expect(parse(await readFile(output, 'utf8'), { columns: true })).toEqual([{ ...csvRow, denomination: '20 F' }]);
   const imported = spawnSync(process.execPath, ['--import', 'tsx', 'scripts/import-catalog.ts', output], {
-    cwd: process.cwd(), env: { ...process.env, DATABASE_PATH: join(directory, 'catalog.sqlite') }, encoding: 'utf8',
+    cwd: process.cwd(), env: { ...process.env, TURSO_DATABASE_URL: `file:${join(directory, 'catalog.sqlite')}` }, encoding: 'utf8',
   });
   expect(imported.stderr).toBe('');
   expect(imported.status, imported.stdout).toBe(0);
